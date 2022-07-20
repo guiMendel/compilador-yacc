@@ -1,10 +1,18 @@
+%{
+#include <sdtio.h>
+#include <stdlib.h>
+
+extern int yylex();
+void yyerror(char *message);
+%}
+
 /* Lexical tokens */
 %token ID
 %token INTCON
 %token CHARCON
 %token STRINGCON
 
-/* Terminal tokens */
+/* C-- Keyword tokens */
 %token EXTERN
 %token VOID
 %token CHAR
@@ -141,3 +149,14 @@ more.expression : empty
                 | more.expression more.expression
                 ;
 %%
+
+void yyerror(char *message) {
+      fprintf(stderr, "%s\n", message);
+      exit(1);
+}
+
+int main() {
+      yyparse();
+
+      return 0;
+}

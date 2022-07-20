@@ -1,75 +1,44 @@
 %{
-#include <stdio.h>
-FILE *out ;
+#include <sdtio.h>
+#include <stdlib.h>
+#include "y.tab.h" // generated via yacc -d
 %}
 
+%option noyywrap;
+
 /*** Definition section ***/
-KEYWORD      "auto"|"if"|"else"|"for"|"while"|"do"|"switch"|"include"|"case"|"break"|"struct"|"union"|"int"|"char"|"float"|"double"|"long"
-NUMCONST    (-?[[:digit:]])+([\.]([[:digit:]]*))?
-IDENTIFIER   [_|a-z|A-Z][a-z|A-Z|0-9|_]*
-STRINGCONST   \"[[:alnum:]]*\"
-SYM          [""|#]
+/* https://www2.cs.arizona.edu/~debray/Teaching/CSc453/DOCS/cminusminusspec.html */
+
+_ID           [a-z|A-Z] ([a-z|A-Z] | [[:digit:]] | _)*
+_INTCON       [[:digit:]]+
+_CHARCON      '[[:print:]]' | '\n' | '\0'
+_STRINGCON    \"[[:print:]]*\"
+_COMMENT      /\* [[:print:]]* /\*
 
 /** Rules Section **/
 %%
-"="         { fprintf(out, "<attribution op, '%s' >\n", yytext); }
-"+"         { fprintf(out, "<arith op, '%s' >\n", yytext); }
-"-"         { fprintf(out, "<arith op, '%s' >\n", yytext); }
-"*"         { fprintf(out, "<arith op, '%s' >\n", yytext); }
-"/"         { fprintf(out, "<arith op, '%s' >\n", yytext); }
-"%"         { fprintf(out, "<arith op, '%s' >\n", yytext); }
-"++"        { fprintf(out, "<arith op, '%s' >\n", yytext); }
-"--"        { fprintf(out, "<arith op, '%s' >\n", yytext); }
-"<"         { fprintf(out, "<logical op, '%s' >\n", yytext); }
-">"         { fprintf(out, "<logical op, '%s' >\n", yytext); }
-"=="        { fprintf(out, "<logical op, '%s' >\n", yytext); }
-"!="        { fprintf(out, "<logical op, '%s' >\n", yytext); }
-">="        { fprintf(out, "<logical op, '%s' >\n", yytext); }
-"<="        { fprintf(out, "<logical op, '%s' >\n", yytext); }
-"||"        { fprintf(out, "<logical op, '%s' >\n", yytext); }
-"&&"        { fprintf(out, "<logical op, '%s' >\n", yytext); }
-"//"        { fprintf(out, "<inline comment, '%s' >\n", yytext); }
-"/*"        { fprintf(out, "<block comment open, '%s' >\n", yytext); }
-"*/"        { fprintf(out, "<block comment close, '%s' >\n", yytext); }
-";"         { fprintf(out, "<end-of-satement, '%s' >\n", yytext); }
-"["         { fprintf(out, "<open square bracket, '%s' >\n", yytext); }
-"]"         { fprintf(out, "<close square bracket, '%s' >\n", yytext); }
-"("         { fprintf(out, "<open parenthesis, '%s' >\n", yytext); }
-")"         { fprintf(out, "<open parenthesis, '%s' >\n", yytext); }
-"{"         { fprintf(out, "<open curly brace, '%s' >\n", yytext); }
-"}"         { fprintf(out, "<open curly brace, '%s' >\n", yytext); }
-","         { fprintf(out, "<comma, '%s' >\n", yytext); }
-"."         { fprintf(out, "<period, '%s' >\n", yytext); }
-":"         { fprintf(out, "<colon, '%s' >\n", yytext); }
-"&"         { fprintf(out, "<ampersand, '%s' >\n", yytext); }
+/* Pass operands right through */
+[!-*/+-><=&|]        { return yytext[0]; }
 
-{SYM}          { fprintf(out, "<symbol, '%s' >\n", yytext); }
-{KEYWORD}      { fprintf(out, "<keyword, '%s' >\n", yytext); } 
-{IDENTIFIER}   { fprintf(out, "<id, '%s' >\n", yytext); }
-{NUMCONST}     { fprintf(out, "<num_const, '%s' >\n", yytext); }
-{STRINGCONST}  { fprintf(out, "<string_const, '%s' >\n", yytext); }
+/* Keywords */
+"extern"             { return EXTERN; }
+"void"               { return VOID; }
+"char"               { return CHAR; }
+"int"                { return INT; }
+"if"                 { return IF; }
+"else"               { return ELSE; }
+"while"              { return WHILE; }
+"for"                { return FOR; }
+"return"             { return RETURN; }
+
+/* Whitespace */
+[ \t\f\v\n]          { ; }
+
+{_ID}                 { yylval.s = yytext; return ID; }
+{_INTCON}             { yylval.i = atoi(yytext); return INTCON; }
+{_CHARCON}            { yylval.c = yytext[0]; return CHARCON; }
+{_STRINGCON}          { yylval.s = yytext; return STRINGCON; }
+{_COMMENT}            { ; }
 
 
 %%
-
-int yywrap();
-
-int main(int argc, char *argv[]){
-    
-    FILE *f = fopen(argv[1],"r");
-
-    if (!f) {
-      printf("error: file not found in path");
-      return -1;
-    }
-
-    yyin = f;
-    out = fopen(argv[2],"w");
-    yylex();
-
-    return 0;
-}
-
-int yywrap(){
-    return 1;
-}
