@@ -1730,6 +1730,8 @@ void yyerror(char *message) {
 }
 
 int main() {
+      yydebug = 1;
+      
       yyparse();
 
       return 0;
