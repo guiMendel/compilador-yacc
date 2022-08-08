@@ -1,12 +1,14 @@
-lexer: lex.yy.c
-	gcc lex.yy.c -o lexer
+simp: lex.yy.c y.tab.c
+	gcc y.tab.c lex.yy.c -o simp
 
-lex.yy.c: lexer.l
-	flex lexer.l
+lex.yy.c: simp_lex.l
+	lex simp_lex.l
+
+y.tab.c: simp_syntax.y
+	yacc -t -d simp_syntax.y
 
 clean:
-	rm lex.yy.c 
-	rm lexer
-
-test: 
-	./lexer test.c test.txt
+	rm -f lex.yy.c 
+	rm -f y.tab.c
+	rm -f y.tab.h
+	rm -f simp
