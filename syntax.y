@@ -23,6 +23,18 @@ void yyerror(char *message);
 %token FOR
 %token RETURN
 
+/* Precedence definitions */
+
+%right '='
+%left OR
+%left AND
+%left EQUALS NOT_EQUALS
+%left LESS_EQUAL BIGGER_EQUAL '<' '>'
+%left '+' '-'
+%left '*' '/'
+%right '!'
+
+
 /* Symbols starting with more. mean 0 or more repetitions of whatever they refer to, usually preceded by a comma */
 /* Symbols starting with optional mean empty or what they refer to */
 
@@ -82,9 +94,9 @@ expression : '-' expression
 
 binary.operation : '+' | '-' | '*' | '/';
 
-relative.operation : '=''=' | '!''=' | '<''=' | '>''=' | '<' | '>';
+relative.operation : EQUALS | NOT_EQUALS | LESS_EQUAL | BIGGER_EQUAL | '<' | '>';
 
-logical.operation : '&''&' | '|''|';
+logical.operation : AND | OR;
 
 
 /* ======== EXTRA SYMBOLS ======== */

@@ -17,6 +17,13 @@ _COMMENT      /\* [[:print:]]* /\*
 
 /** Rules Section **/
 %%
+"=="                 { return EQUALS; }
+"!="                 { return NOT_EQUALS; }
+"<="                 { return LESS_EQUAL; }
+">="                 { return BIGGER_EQUAL; }
+"||"                 { return OR; }
+"&&"                 { return AND; }
+
 /* Pass operands right through */
 [!-*/+-><=&|]        { return yytext[0]; }
 
