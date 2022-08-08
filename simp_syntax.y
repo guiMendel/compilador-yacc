@@ -38,7 +38,8 @@ statements : empty
            | function.declaration statements
            ;
 
-function.declaration : FUNCTION ID '(' parameters ')' DO statements END;
+function.declaration : FUNCTION ID '(' parameters ')' DO statements END
+                     ;
 
 parameters : empty | ID more.parameters;
 
@@ -106,21 +107,6 @@ operation7 : '-' operation7
            | NUM
            | ID
            ;
-
-/* operation : operation '+' operation
-          | operation '-' operation
-          | operation2
-          ;
-
-operation2 : NUM
-           | ID
-           | operation2 '*' operation2
-           | operation2 '/' operation2
-           | operation3
-           ; */
-           
-/* operation3 :  */
-
 
 empty : /* empty */
 %%
