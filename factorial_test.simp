@@ -4,7 +4,7 @@ function factorial(number) do
 
   result = 1;
 
-  while number > 0 do
+  while (number > 0) do
     result = result * number;
     
     number = number - 1;
@@ -13,6 +13,6 @@ function factorial(number) do
   return result;
 end
 
-print(factorial(3));
-print(factorial(7));
-print(factorial(23));
+print factorial(3);
+print factorial(7);
+print factorial(23);

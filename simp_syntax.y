@@ -15,6 +15,8 @@ void yyerror(char *message);
 %token DO
 %token END
 
+%right THEN ELSE
+
 %right '='
 %left OR
 %left AND
@@ -34,7 +36,9 @@ statements : empty
 
 statement : expression ';'
           | declaration ';'
-          /* | IF  */
+          | IF '(' expression ')' statement                %prec THEN
+          | IF '(' expression ')' statement ELSE statement
+          | WHILE '(' expression ')' statement
           | DO statements END
           | ';'
           ;
