@@ -14,6 +14,9 @@ void yyerror(char *message);
 %token WHILE
 %token DO
 %token END
+%token FUNCTION
+%token RETURN
+%token PRINT
 
 %right THEN ELSE
 
@@ -32,14 +35,26 @@ program : statements
 
 statements : empty
            | statement statements
+           | function.declaration statements
            ;
+
+function.declaration : FUNCTION ID '(' parameters ')' DO statements END;
+
+parameters : empty | ID more.parameters;
+
+more.parameters : empty
+               | ',' ID more.parameters
+               ;
 
 statement : expression ';'
           | declaration ';'
-          | IF '(' expression ')' statement                %prec THEN
+          | IF '(' expression ')' statement                   %prec THEN
           | IF '(' expression ')' statement ELSE statement
           | WHILE '(' expression ')' statement
           | DO statements END
+          | RETURN ';'
+          | RETURN expression ';'
+          | PRINT expression ';'
           | ';'
           ;
 
@@ -49,7 +64,14 @@ declaration : VAR ID
 expression : '(' expression ')'
            | ID '=' expression
            | operation
+           | ID '(' arguments ')'
            ;
+
+arguments : empty | expression more.arguments;
+
+more.arguments : empty
+               | ',' expression more.arguments
+               ;
 
 operation : operation OR operation
           | operation2

@@ -57,11 +57,14 @@ extern int yydebug;
     WHILE = 263,
     DO = 264,
     END = 265,
-    THEN = 266,
-    OR = 267,
-    AND = 268,
-    EQUALS = 269,
-    NOT_EQUALS = 270
+    FUNCTION = 266,
+    RETURN = 267,
+    PRINT = 268,
+    THEN = 269,
+    OR = 270,
+    AND = 271,
+    EQUALS = 272,
+    NOT_EQUALS = 273
   };
 #endif
 /* Tokens.  */
@@ -73,11 +76,14 @@ extern int yydebug;
 #define WHILE 263
 #define DO 264
 #define END 265
-#define THEN 266
-#define OR 267
-#define AND 268
-#define EQUALS 269
-#define NOT_EQUALS 270
+#define FUNCTION 266
+#define RETURN 267
+#define PRINT 268
+#define THEN 269
+#define OR 270
+#define AND 271
+#define EQUALS 272
+#define NOT_EQUALS 273
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

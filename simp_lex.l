@@ -15,6 +15,9 @@
 "while"                              { return WHILE; }
 "do"                              { return DO; }
 "end"                              { return END; }
+"function"                              { return FUNCTION; }
+"return"                              { return RETURN; }
+"print"                              { return PRINT; }
 
 "=="                 { return EQUALS; }
 "!="                 { return NOT_EQUALS; }
