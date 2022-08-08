@@ -108,7 +108,7 @@ operation7 : '-' operation7
            | ID
            ;
 
-empty : /* empty */
+empty : /* empty */;
 %%
 
 
