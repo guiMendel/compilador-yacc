@@ -33,6 +33,14 @@ void yyerror(char *message);
 %left '+' '-'
 %left '*' '/'
 %right '!'
+/* %token '='
+%token OR
+%token AND
+%token EQUALS NOT_EQUALS
+%token LESS_EQUAL BIGGER_EQUAL '<' '>'
+%token '+' '-'
+%token '*' '/'
+%token '!' */
 
 
 /* Symbols starting with more. mean 0 or more repetitions of whatever they refer to, usually preceded by a comma */
