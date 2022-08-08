@@ -9,6 +9,11 @@ void yyerror(char *message);
 %token VAR
 %token ID
 %token NUM
+%token IF
+%token ELSE
+%token WHILE
+%token DO
+%token END
 
 %right '='
 %left OR
@@ -29,7 +34,8 @@ statements : empty
 
 statement : expression ';'
           | declaration ';'
-          | '{' statements '}'
+          /* | IF  */
+          | DO statements END
           | ';'
           ;
 

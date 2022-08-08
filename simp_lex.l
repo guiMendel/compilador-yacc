@@ -10,6 +10,11 @@
 
 
 "var"                              { return VAR; }
+"if"                              { return IF; }
+"else"                              { return ELSE; }
+"while"                              { return WHILE; }
+"do"                              { return DO; }
+"end"                              { return END; }
 
 "=="                 { return EQUALS; }
 "!="                 { return NOT_EQUALS; }
@@ -18,7 +23,7 @@
 
 [0-9]+(\.[0-9]+)?([eE][0-9]+)?     { return NUM; }
 [a-z|A-Z]([a-z|A-Z]|[[:digit:]]|_)*   { return ID; }
-[!-*/+-><=&|\(\)\{\}]                 { return yytext[0]; }
+[!-*/+-><=&|\(\)]                 { return yytext[0]; }
 [ \t\f\v\n]                        { ; }
 #.*\n                              { ; }
 

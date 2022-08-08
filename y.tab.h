@@ -52,20 +52,30 @@ extern int yydebug;
     VAR = 258,
     ID = 259,
     NUM = 260,
-    OR = 261,
-    AND = 262,
-    EQUALS = 263,
-    NOT_EQUALS = 264
+    IF = 261,
+    ELSE = 262,
+    WHILE = 263,
+    DO = 264,
+    END = 265,
+    OR = 266,
+    AND = 267,
+    EQUALS = 268,
+    NOT_EQUALS = 269
   };
 #endif
 /* Tokens.  */
 #define VAR 258
 #define ID 259
 #define NUM 260
-#define OR 261
-#define AND 262
-#define EQUALS 263
-#define NOT_EQUALS 264
+#define IF 261
+#define ELSE 262
+#define WHILE 263
+#define DO 264
+#define END 265
+#define OR 266
+#define AND 267
+#define EQUALS 268
+#define NOT_EQUALS 269
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
