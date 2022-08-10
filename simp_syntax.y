@@ -16,7 +16,8 @@ void yyerror(char *message);
 %token END
 %token FUNCTION
 %token RETURN
-%token PRINT
+%token WRITE
+%token READ
 
 %right THEN ELSE
 
@@ -55,7 +56,8 @@ statement : expression ';'
           | DO statements END
           | RETURN ';'
           | RETURN expression ';'
-          | PRINT expression ';'
+          | READ ID ';'
+          | WRITE expression ';'
           | ';'
           ;
 
