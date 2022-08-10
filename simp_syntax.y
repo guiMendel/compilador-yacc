@@ -67,7 +67,7 @@ declaration : VAR ID
 expression : '(' expression ')'
            | ID '=' expression
            | operation
-           | ID '(' arguments ')'
+           | ID '(' arguments ')' /* Chamada de funcao */
            ;
 
 arguments : empty | expression more.arguments;

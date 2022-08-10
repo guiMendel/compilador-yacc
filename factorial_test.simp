@@ -13,6 +13,6 @@ function factorial(number) do
   return result;
 end
 
-print factorial(3);
-print factorial(7);
-print factorial(23);
+write factorial(3);
+write factorial(7);
+write factorial(23);
