@@ -1,7 +1,0 @@
-make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/guimendel/projects/unb/compilador-yacc'
-lex simp_lex.l
-yacc -t -d simp_syntax.y
-gcc y.tab.c lex.yy.c -o simp
-make: Leaving directory '/home/guimendel/projects/unb/compilador-yacc'
- 
