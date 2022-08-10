@@ -13,6 +13,8 @@ function factorial(number) do
   return result;
 end
 
-write factorial(3);
-write factorial(7);
-write factorial(23);
+var testNumber;
+
+read testNumber;
+
+write factorial(testNumber);

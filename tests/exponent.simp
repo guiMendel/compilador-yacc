@@ -1,0 +1,26 @@
+# Returns the result of base to the power of exp
+function exponent(base, exp) do
+  # Catch exp 0
+  if (exp == 0) return 1;
+
+  # Will hold the result
+  var result;
+
+  result = 1;
+
+  while (exp > 0) do
+    result = result * base;
+
+    exp = exp - 1;
+  end
+
+  return result;
+end
+
+var testBase;
+var testExp;
+
+read testBase;
+read testExp;
+
+write exponent(testBase, testExp);
