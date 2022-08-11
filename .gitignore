@@ -1,6 +1,10 @@
 *.out
+*.o
+parse.c
+scan.c
 lex.yy.c
 y.tab.c
 y.tab.h
 simp
+simp.bin
 .vscode
