@@ -122,10 +122,4 @@ void yyerror(char *message) {
       exit(1);
 }
 
-int main() {
-      int yydebug = 1;
-      
-      yyparse();
-
-      return 0;
-}
+// TODO: parse function inspired by loucomp

@@ -13,4 +13,6 @@ simp.o: simp.c
 
 .PHONY: clean
 clean:
-	$(RM) -r $(BUILD_DIR)
+	rm -f $(OBJS)
+	rm -f y.tab.h
+	rm -f parse.c
