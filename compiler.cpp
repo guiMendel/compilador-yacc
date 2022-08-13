@@ -31,7 +31,7 @@ public:
 
     emit(node->kstr);
     emit(node->knum);
-    /* emit(node->functions); */
+    /* emit(node->functions); */  emit((int) 0);
 
     // TODO: figure this out
     int i = 0x00000004;
@@ -39,7 +39,11 @@ public:
 
     // push code
     for (auto &stmt : node->statements) {
+      stmt->accept(*this);
     }
+
+    // FIXME: this may only be emitted on main
+    emitOpCode(OP_END);
   }
 
   virtual void visit(Number *node) { emitSigned(OP_PUSHINT, node->value); }
@@ -69,18 +73,22 @@ private:
     emitBlock(string, length);
   }
 
-  void emit(double number) { printf("%f", number); }
+  void emit(const char *string) {
+    size_t length = strlen(string) + 1;
+    emit(length);
+    emitBlock(string, length);
+  }
+
+  void emit(double number) { emitBlock(&number, sizeof(number)); }
 
   void emit(unsigned long value) { emitBlock(&value, sizeof(value)); }
 
-  void emit(string s) {
-    emit(s.c_str());
-  }
+  void emit(string s) { emit(s.c_str()); }
 
   template <typename T> void emit(T value) { emit(value); }
 
   template <typename T> void emit(vector<T> vec) {
-    emit(vec.size());
+    emit((int) vec.size());
     for (auto &item : vec) {
       emit(item);
     }

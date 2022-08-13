@@ -36,7 +36,7 @@ public:
   char is_vararg;
   int max_stack;
 
-  vector<AstNode> statements;
+  vector<shared_ptr<AstNode>> statements;
   vector<void*> locals;
   vector<void*> lines;
 
