@@ -9,7 +9,7 @@ OBJS 		= scan.o parse.o compiler.o ast.o
 simp: $(OBJS)
 scan.o: scan.l parse.c
 parse.o: parse.y
-simp.o: compiler.cpp
+compiler.o: compiler.cpp
 
 .PHONY: clean
 clean:

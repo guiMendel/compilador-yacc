@@ -1,6 +1,6 @@
 #include "compiler.h"
-#include "opcodes.h"
 #include "ast.h"
+#include "opcodes.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -11,16 +11,15 @@
 
 class Compiler : public Visitor {
 public:
-  Compiler() {
-    file = fopen("/tmp/simp.bin", "wb");
-  }
+  Compiler() { file = fopen("/tmp/simp.bin", "wb"); }
 
-  void compile() {
-
+  void compile(Function &main) {
+    emitHeader();
+    main.accept(*this);
   }
 
   virtual void visit(Function *node) {
-    emitString(node->source_name);
+    emit(node->source_name);
 
     emit(node->line_defined);
     emit(node->num_params);
@@ -32,15 +31,14 @@ public:
 
     emit(node->kstr);
     emit(node->knum);
-    emit(node->functions);
+    /* emit(node->functions); */
 
     // TODO: figure this out
     int i = 0x00000004;
     emit(i);
 
     // push code
-    for(auto &stmt : node->statements) {
-
+    for (auto &stmt : node->statements) {
     }
   }
 
@@ -52,36 +50,58 @@ public:
 
     // push arguments
     for (auto &arg : node->arguments) {
-      arg.accept(*this);
+      arg->accept(*this);
     }
 
     emitOpCode(OP_CALL); // call function
   }
 
 private:
-  static FILE *file;
+  FILE *file;
 
-  void emit(int value) {
-    emitBlock(&value, sizeof(value));
-  }
+  void emit(int value) { emitBlock(&value, sizeof(value)); }
 
-  void emit(char* string) {
+  void emit(char value) { emitByte(value); }
+
+  void emit(char *string) {
     size_t length = strlen(string) + 1;
     emit(length);
     emitBlock(string, length);
   }
 
-  template<typename T>
-  void emit(T value) {
-    emit(value);
+  void emit(double number) { printf("%f", number); }
+
+  void emit(unsigned long value) { emitBlock(&value, sizeof(value)); }
+
+  void emit(string s) {
+    emit(s.c_str());
   }
 
-  template<typename T>
-  void emit(vector<T> vec) {
+  template <typename T> void emit(T value) { emit(value); }
+
+  template <typename T> void emit(vector<T> vec) {
     emit(vec.size());
-    for(auto &item : vec) {
+    for (auto &item : vec) {
       emit(item);
     }
+  }
+
+  void emitHeader() {
+    emitByte(ID_CHUNK);
+    fputs(SIGNATURE, file);
+
+    emitByte(0x40);             // Version
+    emitByte(0x01);             // endianess
+    emitByte(sizeof(int));      // int size
+    emitByte(sizeof(size_t));   // size_t size
+    emitByte(0x08);             // instruction size
+    emitByte(SIZE_INSTRUCTION); // instruction width
+    emitByte(SIZE_OP);          // op width
+    emitByte(SIZE_B);           // b width
+    emitByte(0x08);             // number size (double)
+
+    double test = TEST_NUMBER;
+    emit(test);
   }
 
   void emitSigned(OpCode opcode, int value) {
@@ -99,3 +119,8 @@ private:
     emit(instruction);
   }
 };
+
+void compile(Function &main) {
+  Compiler compiler;
+  compiler.compile(main);
+}

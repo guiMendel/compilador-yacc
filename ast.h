@@ -3,8 +3,17 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 using namespace std;
+
+// temporary
+typedef struct {
+  char* name;
+  int start_pc;
+  int end_pc;
+} Local;
+// 
 
 class Visitor;
 
@@ -47,14 +56,18 @@ public:
 
 class Call : public AstNode {
 public:
-  Call(int index, vector<AstNode> arguments)
-      : index(index), arguments(arguments) {}
+  // TODO: nosso analisador semantico vai passar pelos arguments um por um
+  // então imagino que deve ser melhor a cada arg chamar
+  // call.arguments.push_back do que passar os arguments no construtor
+  Call(int index) {
+    this->index = index;
+  }
 
   void accept(Visitor &visitor);
 
-  /** index of this function on kstr vector */
+  /** index of the function being called by name on kstr vector */
   int index;
-  vector<AstNode> arguments;
+  vector<shared_ptr<AstNode>> arguments;
 };
 
 
@@ -62,6 +75,7 @@ class Visitor {
 public:
   virtual void visit(Number *node) = 0;
   virtual void visit(Call *node) = 0;
+  virtual void visit(Function *node) = 0;
 };
 
 #endif // __AST_H
