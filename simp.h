@@ -1,6 +1,5 @@
 #include <stdint.h>
-
-#include "list.h"
+#include <vector>
 
 #define ID_CHUNK	27		  /* binary files start with ESC... */
 #define	SIGNATURE	"Lua"		/* ...followed by this signature */
@@ -36,7 +35,7 @@ typedef struct {
   int line;
   int col;
   int val;
-  list children;
+  vector children;
 } AstNode;
 
 typedef struct {
