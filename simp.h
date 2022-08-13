@@ -14,11 +14,11 @@ typedef uint8_t byte;
 
 // ast node types
 typedef enum {
-  NODE_NUM,
+  NODE_NUM, // done
   NODE_BINOP,
   NODE_UNOP,
-  NODE_CALL,
-  NODE_FUNC,
+  NODE_CALL, // done
+  NODE_FUNC, // doing
   NODE_RETURN,
   NODE_IF,
   NODE_WHILE,

@@ -1,54 +1,47 @@
+#include "compiler.h"
 #include "opcodes.h"
+#include "ast.h"
+
 #include <stdio.h>
-#include <vector>
+#include <string.h>
 
-using namespace std;
-
-class Visitor;
-
-class AstNode {
-public:
-  virtual void accept(Visitor &visitor) = 0;
-};
-
-class Number : public AstNode {
-public:
-  Number(int value) : value(value) {}
-  void accept(Visitor &visitor);
-
-  int value;
-};
-
-class Call : public AstNode {
-public:
-  Call(int index, vector<AstNode> arguments)
-      : index(index), arguments(arguments) {}
-
-  void accept(Visitor &visitor);
-
-  /** index of this function on kstr vector */
-  int index;
-  vector<AstNode> arguments;
-};
-
-class Visitor {
-public:
-  virtual void visit(Number *node) = 0;
-  virtual void visit(Call *node) = 0;
-};
-
-void Number::accept(Visitor &v) { v.visit(this); }
-
-void Call::accept(Visitor &v) { v.visit(this); }
+#define emitVector(vector, count) fwrite(vector, sizeof(*vector), count, file)
+#define emitBlock(pointer, size) fwrite(pointer, size, 1, file)
+#define emitByte(byte) fputc(byte, file)
 
 class Compiler : public Visitor {
 public:
   Compiler() {
-    file = fopen("simp.bin", "wb");
+    file = fopen("/tmp/simp.bin", "wb");
   }
 
   void compile() {
 
+  }
+
+  virtual void visit(Function *node) {
+    emitString(node->source_name);
+
+    emit(node->line_defined);
+    emit(node->num_params);
+    emit(node->is_vararg);
+    emit(node->max_stack);
+
+    emit(node->locals);
+    emit(node->lines);
+
+    emit(node->kstr);
+    emit(node->knum);
+    emit(node->functions);
+
+    // TODO: figure this out
+    int i = 0x00000004;
+    emit(i);
+
+    // push code
+    for(auto &stmt : node->statements) {
+
+    }
   }
 
   virtual void visit(Number *node) { emitSigned(OP_PUSHINT, node->value); }
@@ -68,10 +61,28 @@ public:
 private:
   static FILE *file;
 
-#define emitVector(vector, count) fwrite(vector, sizeof(*vector), count, file)
-#define emitBlock(pointer, size) fwrite(pointer, size, 1, file)
-#define emitByte(byte) fputc(byte, file)
-#define emit(value) emitBlock(&value, sizeof(value))
+  void emit(int value) {
+    emitBlock(&value, sizeof(value));
+  }
+
+  void emit(char* string) {
+    size_t length = strlen(string) + 1;
+    emit(length);
+    emitBlock(string, length);
+  }
+
+  template<typename T>
+  void emit(T value) {
+    emit(value);
+  }
+
+  template<typename T>
+  void emit(vector<T> vec) {
+    emit(vec.size());
+    for(auto &item : vec) {
+      emit(item);
+    }
+  }
 
   void emitSigned(OpCode opcode, int value) {
     Instruction instruction = CREATE_S(opcode, value);
