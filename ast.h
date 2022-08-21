@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <set>
 
 using namespace std;
 
@@ -42,7 +43,7 @@ public:
 
   /* constants */
   vector<int> knum;
-  vector<string> kstr;
+  set<string> kstr;
   vector<Function> functions;
 };
 
@@ -59,12 +60,11 @@ public:
   // TODO: nosso analisador semantico vai passar pelos arguments um por um
   // então imagino que deve ser melhor a cada arg chamar
   // call.arguments.push_back do que passar os arguments no construtor
-  Call(int index) { this->index = index; }
+  Call(string name) : name(name) {}
 
   void accept(Visitor &visitor);
 
-  /** index of the function being called by name on kstr vector */
-  int index;
+  string name;
   vector<shared_ptr<AstNode>> arguments;
 };
 
@@ -102,9 +102,9 @@ public:
 
 class Identifier : public AstNode {
 public:
-  Identifier(int index) : index(index) {};
+  Identifier(string name) : name(name) {}
   void accept(Visitor &visitor);
-  int index;
+  string name;
 };
 
 typedef enum {
@@ -144,6 +144,14 @@ public:
   AstNode *right;
 };
 
+class AssignExpr : public AstNode {
+public:
+  AssignExpr(Identifier *left, AstNode *right) : left(left), right(right) {}
+  void accept(Visitor &visitor);
+  Identifier *left;
+  AstNode *right;
+};
+
 class Visitor {
 public:
   virtual void visit(Number *node) = 0;
@@ -158,6 +166,8 @@ public:
   virtual void visit(BinaryExpr *node) = 0;
   virtual void visit(AndExpr *node) = 0;
   virtual void visit(OrExpr *node) = 0;
+
+  virtual void visit(AssignExpr *node) = 0;
 };
 
 #endif // __AST_H

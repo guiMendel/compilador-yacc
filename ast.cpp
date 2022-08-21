@@ -12,4 +12,4 @@ void BinaryExpr::accept(Visitor &v) { v.visit(this); }
 void AndExpr::accept(Visitor &v) { v.visit(this); }
 void OrExpr::accept(Visitor &v) { v.visit(this); }
 
-
+void AssignExpr::accept(Visitor &v) { v.visit(this); }

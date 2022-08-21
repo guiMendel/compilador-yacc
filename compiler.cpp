@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stack>
 
 #define emitVector(vector, count) fwrite(vector, sizeof(*vector), count, file)
 #define emitBlock(pointer, size) fwrite(pointer, size, 1, file)
@@ -15,6 +16,8 @@ public:
   Compiler() { file = fopen("/tmp/simp.bin", "wb"); }
 
   void compile(Function &main) {
+    this->main = &main;
+
     emitHeader();
     main.accept(*this);
   }
@@ -54,7 +57,7 @@ public:
 
   void visit(Call *node) {
     // fetch function name
-    emitUnsigned(OP_GETGLOBAL, node->index);
+    emitUnsigned(OP_GETGLOBAL, findGlobal(node->name));
 
     // push arguments
     for (auto &arg : node->arguments) {
@@ -103,7 +106,7 @@ public:
   }
 
   void visit(Identifier *node) {
-    emitUnsigned(OP_GETGLOBAL, node->index);
+    emitUnsigned(OP_GETGLOBAL, findGlobal(node->name));
   }
 
   void visit(BinaryExpr *node) {
@@ -136,8 +139,14 @@ public:
     patchJump(OP_JMPONT, thenOffset);
   }
 
+  void visit(AssignExpr *node) {
+    node->right->accept(*this);
+    emitUnsigned(OP_SETGLOBAL, findGlobal(node->left->name));
+  }
+
 private:
   FILE *file;
+  Function* main;
 
   void emit(int value) { emitBlock(&value, sizeof(value)); }
 
@@ -168,6 +177,13 @@ private:
   template <typename T> void emit(vector<T> vec) {
     emit((int)vec.size());
     for (auto &item : vec) {
+      emit(item);
+    }
+  }
+
+  template <typename T> void emit(set<T> s) {
+    emit((int)s.size());
+    for (auto &item : s) {
       emit(item);
     }
   }
@@ -237,6 +253,18 @@ private:
 
     fseek(file, 0, SEEK_END);
   }
+
+  int findGlobal(string name) {
+    auto index = main->kstr.find(name);
+
+    if (index == main->kstr.end()) {
+      printf("%s not found\n", name.c_str());
+      exit(1);
+    }
+
+    return distance(main->kstr.begin(), index);
+  }
+
 };
 
 void compile(Function &main) {
