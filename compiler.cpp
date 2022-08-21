@@ -42,7 +42,8 @@ public:
       stmt->accept(*this);
     }
 
-    patch(0x14, offset);
+    patch(instructions + 1, offset);
+    printf("%d\n", instructions);
 
     // FIXME: this may only be emitted on main
     emitOpCode(OP_END);
@@ -100,17 +101,17 @@ public:
   }
 
   void visit(AndExpr *node) {
-    int elseOffset = emitNoop();
     node->left->accept(*this);
-    patchJump(OP_JMPONF, elseOffset);
+    int elseOffset = emitNoop();
     node->right->accept(*this);
+    patchJump(OP_JMPONF, elseOffset);
   }
 
   void visit(OrExpr *node) {
-    int thenOffset = emitNoop();
     node->left->accept(*this);
-    patchJump(OP_JMPONT, thenOffset);
+    int thenOffset = emitNoop();
     node->right->accept(*this);
+    patchJump(OP_JMPONT, thenOffset);
   }
 
 private:
