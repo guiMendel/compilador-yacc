@@ -102,7 +102,9 @@ public:
 
 class Identifier : public AstNode {
 public:
-  Identifier(string name) : name(name) {}
+  Identifier(string name, Function* function) : name(name) {
+    function->kstr.insert(name);
+  }
   void accept(Visitor &visitor);
   string name;
 };
@@ -152,6 +154,25 @@ public:
   AstNode *right;
 };
 
+class ReadStmt : public AstNode {
+public:
+  ReadStmt(Identifier *id, Function *function) : id(id) {
+    function->kstr.insert("read");
+    function->kstr.insert("*n");
+  }
+  void accept(Visitor &visitor);
+  Identifier *id;
+};
+
+class WriteStmt : public AstNode {
+public:
+  WriteStmt(AstNode *expr, Function *function) : expr(expr) {
+    function->kstr.insert("print");
+  }
+  void accept(Visitor &visitor);
+  AstNode *expr;
+};
+
 class Visitor {
 public:
   virtual void visit(Number *node) = 0;
@@ -168,6 +189,8 @@ public:
   virtual void visit(OrExpr *node) = 0;
 
   virtual void visit(AssignExpr *node) = 0;
+  virtual void visit(ReadStmt *node) = 0;
+  virtual void visit(WriteStmt *node) = 0;
 };
 
 #endif // __AST_H

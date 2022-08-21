@@ -6,21 +6,18 @@ int main() {
 
   main.max_stack = 100;
 
-  main.kstr.insert("print");
-  main.kstr.insert("n");
+  Identifier *id = new Identifier("number", &main);
 
   BlockStmt *block = new BlockStmt();
 
-  Call *call = new Call("print");
-  call->arguments.push_back(shared_ptr<AstNode>(new Identifier("n")));
 
-  block->statements.push_back(shared_ptr<AstNode>( call ));
-  block->statements.push_back(shared_ptr<AstNode>( new AssignExpr(new Identifier("n"), 
-                              new BinaryExpr(BIN_SUB, new Identifier("n"), new Number(1)))));
+  block->statements.push_back(shared_ptr<AstNode>(new WriteStmt(id, &main)));
+  block->statements.push_back(shared_ptr<AstNode>( new AssignExpr(id, 
+                              new BinaryExpr(BIN_SUB, id, new Number(1)))));
 
-  main.statements.push_back(shared_ptr<AstNode>(new AssignExpr(new Identifier("n"), new Number(3))));
+  main.statements.push_back(shared_ptr<AstNode>(new ReadStmt(id, &main)));
   main.statements.push_back(shared_ptr<AstNode>(
-                              new WhileStmt(new BinaryExpr(BIN_GT, new Identifier("n"), new Number(0)),
+                              new WhileStmt(new BinaryExpr(BIN_GT, id, new Number(0)),
                                             block)));
 
   compile(main);

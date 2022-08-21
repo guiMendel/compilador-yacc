@@ -13,3 +13,5 @@ void AndExpr::accept(Visitor &v) { v.visit(this); }
 void OrExpr::accept(Visitor &v) { v.visit(this); }
 
 void AssignExpr::accept(Visitor &v) { v.visit(this); }
+void ReadStmt::accept(Visitor &v) { v.visit(this); }
+void WriteStmt::accept(Visitor &v) { v.visit(this); }

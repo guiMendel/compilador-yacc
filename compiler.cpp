@@ -2,9 +2,9 @@
 #include "ast.h"
 #include "opcodes.h"
 
+#include <stack>
 #include <stdio.h>
 #include <string.h>
-#include <stack>
 
 #define emitVector(vector, count) fwrite(vector, sizeof(*vector), count, file)
 #define emitBlock(pointer, size) fwrite(pointer, size, 1, file)
@@ -92,7 +92,7 @@ public:
     node->body->accept(*this);
 
     int loopOffset = getOffset();
-    int diff = (conditionOffset - loopOffset) / 8 ;
+    int diff = (conditionOffset - loopOffset) / 8;
     Instruction loopJump = CREATE_S(OP_JMP, diff - 1);
     emit(loopJump);
 
@@ -113,15 +113,31 @@ public:
     node->left->accept(*this);
     node->right->accept(*this);
 
-    switch(node->op) {
-      case BinaryOp::BIN_ADD: emitOpCode(OP_ADD); break;
-      case BinaryOp::BIN_SUB: emitOpCode(OP_SUB); break;
-      case BinaryOp::BIN_MUL: emitOpCode(OP_MULT); break;
-      case BinaryOp::BIN_DIV: emitOpCode(OP_DIV); break;
-      case BinaryOp::BIN_LT: emitCompare(OP_JMPLT); break;
-      case BinaryOp::BIN_GT: emitCompare(OP_JMPGT); break;
-      case BinaryOp::BIN_EQ: emitCompare(OP_JMPEQ); break;
-      case BinaryOp::BIN_NE: emitCompare(OP_JMPNE); break;
+    switch (node->op) {
+    case BinaryOp::BIN_ADD:
+      emitOpCode(OP_ADD);
+      break;
+    case BinaryOp::BIN_SUB:
+      emitOpCode(OP_SUB);
+      break;
+    case BinaryOp::BIN_MUL:
+      emitOpCode(OP_MULT);
+      break;
+    case BinaryOp::BIN_DIV:
+      emitOpCode(OP_DIV);
+      break;
+    case BinaryOp::BIN_LT:
+      emitCompare(OP_JMPLT);
+      break;
+    case BinaryOp::BIN_GT:
+      emitCompare(OP_JMPGT);
+      break;
+    case BinaryOp::BIN_EQ:
+      emitCompare(OP_JMPEQ);
+      break;
+    case BinaryOp::BIN_NE:
+      emitCompare(OP_JMPNE);
+      break;
     }
   }
 
@@ -144,9 +160,27 @@ public:
     emitUnsigned(OP_SETGLOBAL, findGlobal(node->left->name));
   }
 
+  void visit(WriteStmt *node) {
+    emitUnsigned(OP_GETGLOBAL, findGlobal("print"));
+
+    node->expr->accept(*this);
+
+    emitOpCode(OP_CALL);
+  }
+
+  void visit(ReadStmt *node) {
+    emitUnsigned(OP_GETGLOBAL, findGlobal("read"));
+    emitUnsigned(OP_PUSHSTRING, findGlobal("*n"));
+
+    // read has multiple return, so we need to call it with 1 argument
+    emit(CREATE_AB(OP_CALL, 0, 1));
+
+    emitUnsigned(OP_SETGLOBAL, findGlobal(node->id->name));
+  }
+
 private:
   FILE *file;
-  Function* main;
+  Function *main;
 
   void emit(int value) { emitBlock(&value, sizeof(value)); }
 
@@ -166,9 +200,7 @@ private:
 
   void emit(double number) { emitBlock(&number, sizeof(number)); }
 
-  void emit(Instruction value) { 
-    emitBlock(&value, sizeof(value)); 
-  }
+  void emit(Instruction value) { emitBlock(&value, sizeof(value)); }
 
   void emit(string s) { emit(s.c_str()); }
 
@@ -264,7 +296,6 @@ private:
 
     return distance(main->kstr.begin(), index);
   }
-
 };
 
 void compile(Function &main) {
