@@ -42,7 +42,7 @@ public:
       stmt->accept(*this);
     }
 
-    patch(instructions, offset);
+    patch(0x14, offset);
 
     // FIXME: this may only be emitted on main
     emitOpCode(OP_END);
@@ -81,6 +81,36 @@ public:
 
   void visit(Identifier *node) {
     emitUnsigned(OP_GETGLOBAL, node->index);
+  }
+
+  void visit(BinaryExpr *node) {
+    node->left->accept(*this);
+    node->right->accept(*this);
+
+    switch(node->op) {
+      case BinaryOp::BIN_ADD: emitOpCode(OP_ADD); break;
+      case BinaryOp::BIN_SUB: emitOpCode(OP_SUB); break;
+      case BinaryOp::BIN_MUL: emitOpCode(OP_MULT); break;
+      case BinaryOp::BIN_DIV: emitOpCode(OP_DIV); break;
+      case BinaryOp::BIN_LT: emitCompare(OP_JMPLT); break;
+      case BinaryOp::BIN_GT: emitCompare(OP_JMPGT); break;
+      case BinaryOp::BIN_EQ: emitCompare(OP_JMPEQ); break;
+      case BinaryOp::BIN_NE: emitCompare(OP_JMPNE); break;
+    }
+  }
+
+  void visit(AndExpr *node) {
+    int elseOffset = emitNoop();
+    node->left->accept(*this);
+    patchJump(OP_JMPONF, elseOffset);
+    node->right->accept(*this);
+  }
+
+  void visit(OrExpr *node) {
+    int thenOffset = emitNoop();
+    node->left->accept(*this);
+    patchJump(OP_JMPONT, thenOffset);
+    node->right->accept(*this);
   }
 
 private:
@@ -151,6 +181,15 @@ private:
 
   void emitOpCode(OpCode opcode) {
     Instruction instruction = CREATE_0(opcode);
+    emit(instruction);
+  }
+
+  void emitCompare(OpCode opcode) {
+    Instruction instruction = CREATE_S(opcode, 1);
+    emit(instruction);
+    instruction = CREATE_0(OP_PUSHNILJMP);
+    emit(instruction);
+    instruction = CREATE_S(OP_PUSHINT, 1);
     emit(instruction);
   }
 

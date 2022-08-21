@@ -31,10 +31,10 @@ public:
   void accept(Visitor &visitor);
 
   char *source_name;
-  int line_defined;
-  int num_params;
-  char is_vararg;
-  int max_stack;
+  int line_defined = 1;
+  int num_params = 0;
+  char is_vararg = 0;
+  int max_stack = 0;
 
   vector<shared_ptr<AstNode>> statements;
   vector<void *> locals;
@@ -89,6 +89,43 @@ public:
   int index;
 };
 
+typedef enum {
+  BIN_ADD,
+  BIN_SUB,
+  BIN_MUL,
+  BIN_DIV,
+  BIN_LT,
+  BIN_GT,
+  BIN_EQ,
+  BIN_NE,
+} BinaryOp;
+
+class BinaryExpr : public AstNode {
+public:
+  BinaryExpr(BinaryOp op, AstNode *left, AstNode *right)
+      : op(op), left(left), right(right) {}
+  void accept(Visitor &visitor);
+  BinaryOp op;
+  AstNode *left;
+  AstNode *right;
+};
+
+class AndExpr : public AstNode {
+public:
+  AndExpr(AstNode *left, AstNode *right) : left(left), right(right) {}
+  void accept(Visitor &visitor);
+  AstNode *left;
+  AstNode *right;
+};
+
+class OrExpr : public AstNode {
+public:
+  OrExpr(AstNode *left, AstNode *right) : left(left), right(right) {}
+  void accept(Visitor &visitor);
+  AstNode *left;
+  AstNode *right;
+};
+
 class Visitor {
 public:
   virtual void visit(Number *node) = 0;
@@ -97,6 +134,10 @@ public:
 
   virtual void visit(IfStmt *node) = 0;
   virtual void visit(Identifier *node) = 0;
+
+  virtual void visit(BinaryExpr *node) = 0;
+  virtual void visit(AndExpr *node) = 0;
+  virtual void visit(OrExpr *node) = 0;
 };
 
 #endif // __AST_H
