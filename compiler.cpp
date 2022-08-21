@@ -18,7 +18,7 @@ public:
     main.accept(*this);
   }
 
-  virtual void visit(Function *node) {
+  void visit(Function *node) {
     emit(node->source_name);
 
     emit(node->line_defined);
@@ -31,24 +31,26 @@ public:
 
     emit(node->kstr);
     emit(node->knum);
-    /* emit(node->functions); */  emit((int) 0);
+    /* emit(node->functions); */ emit((int)0);
 
-    // TODO: figure this out
-    int i = 0x00000004;
-    emit(i);
+    instructions = 0;
+    emit(0x0);
+    int offset = (int)(ftell(file) - sizeof(int));
 
     // push code
     for (auto &stmt : node->statements) {
       stmt->accept(*this);
     }
 
+    patch(instructions, offset);
+
     // FIXME: this may only be emitted on main
     emitOpCode(OP_END);
   }
 
-  virtual void visit(Number *node) { emitSigned(OP_PUSHINT, node->value); }
+  void visit(Number *node) { emitSigned(OP_PUSHINT, node->value); }
 
-  virtual void visit(Call *node) {
+  void visit(Call *node) {
     // fetch function name
     emitUnsigned(OP_GETGLOBAL, node->index);
 
@@ -60,8 +62,30 @@ public:
     emitOpCode(OP_CALL); // call function
   }
 
+  void visit(IfStmt *node) {
+    node->condition->accept(*this);
+
+    int thenOffset = emitNoop();
+    node->then_stmt->accept(*this);
+
+    // talvez nao precise disso sempre
+    int elseOffset = emitNoop();
+    patchJump(OP_JMPF, thenOffset);
+
+    if (node->else_stmt != nullptr) {
+      node->else_stmt->accept(*this);
+    }
+
+    patchJump(OP_JMP, elseOffset);
+  }
+
+  void visit(Identifier *node) {
+    emitUnsigned(OP_GETGLOBAL, node->index);
+  }
+
 private:
   FILE *file;
+  int instructions;
 
   void emit(int value) { emitBlock(&value, sizeof(value)); }
 
@@ -81,14 +105,17 @@ private:
 
   void emit(double number) { emitBlock(&number, sizeof(number)); }
 
-  void emit(unsigned long value) { emitBlock(&value, sizeof(value)); }
+  void emit(Instruction value) { 
+    emitBlock(&value, sizeof(value)); 
+    instructions++;
+  }
 
   void emit(string s) { emit(s.c_str()); }
 
   template <typename T> void emit(T value) { emit(value); }
 
   template <typename T> void emit(vector<T> vec) {
-    emit((int) vec.size());
+    emit((int)vec.size());
     for (auto &item : vec) {
       emit(item);
     }
@@ -125,6 +152,31 @@ private:
   void emitOpCode(OpCode opcode) {
     Instruction instruction = CREATE_0(opcode);
     emit(instruction);
+  }
+
+  int emitNoop() {
+    Instruction instruction = CREATE_0(OP_JMP);
+    emit(instruction);
+    return (int)(ftell(file) - sizeof(instruction));
+  }
+
+  void patch(int value, int offset) {
+    fseek(file, offset, SEEK_SET);
+    emit(value);
+    fseek(file, 0, SEEK_END);
+  }
+
+  void patchJump(OpCode opcode, int offset) {
+    int current = (int)(ftell(file) - sizeof(Instruction));
+    int diff = (current - offset) / 8;
+
+    fseek(file, offset, SEEK_SET);
+
+    Instruction instruction = CREATE_S(opcode, diff);
+    emit(instruction);
+    instructions--; // TODO: improve this
+
+    fseek(file, 0, SEEK_END);
   }
 };
 

@@ -1,5 +1,7 @@
-CC      = g++
+CC      = gcc
 CFLAGS  = -Wall -g
+CXX 		= g++
+CXXFLAGS = -Wall -g
 
 LEX     = flex
 YACC    = bison -y
