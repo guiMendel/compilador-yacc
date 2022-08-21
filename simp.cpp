@@ -2,7 +2,7 @@
 #include "compiler.h"
 
 int main() {
-  Function main("=(none)", 0);
+  Function main("@example.lua", 0);
 
   main.max_stack = 100;
 

@@ -33,7 +33,6 @@ public:
     emit(node->knum);
     /* emit(node->functions); */ emit((int)0);
 
-    instructions = 0;
     emit(0x0);
     int offset = (int)(ftell(file) - sizeof(int));
 
@@ -42,11 +41,12 @@ public:
       stmt->accept(*this);
     }
 
-    patch(instructions + 1, offset);
-    printf("%d\n", instructions);
-
     // FIXME: this may only be emitted on main
     emitOpCode(OP_END);
+
+    // write how many bytes were written
+    int diff = (int)(ftell(file) - sizeof(int) - offset) / 8;
+    patch(diff, offset);
   }
 
   void visit(Number *node) { emitSigned(OP_PUSHINT, node->value); }
@@ -116,7 +116,6 @@ public:
 
 private:
   FILE *file;
-  int instructions;
 
   void emit(int value) { emitBlock(&value, sizeof(value)); }
 
@@ -138,7 +137,6 @@ private:
 
   void emit(Instruction value) { 
     emitBlock(&value, sizeof(value)); 
-    instructions++;
   }
 
   void emit(string s) { emit(s.c_str()); }
@@ -214,7 +212,6 @@ private:
 
     Instruction instruction = CREATE_S(opcode, diff);
     emit(instruction);
-    instructions--; // TODO: improve this
 
     fseek(file, 0, SEEK_END);
   }
