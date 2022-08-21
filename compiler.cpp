@@ -8,6 +8,7 @@
 #define emitVector(vector, count) fwrite(vector, sizeof(*vector), count, file)
 #define emitBlock(pointer, size) fwrite(pointer, size, 1, file)
 #define emitByte(byte) fputc(byte, file)
+#define getOffset(pointer) (int)(ftell(file) - sizeof(Instruction))
 
 class Compiler : public Visitor {
 public:
@@ -66,11 +67,11 @@ public:
   void visit(IfStmt *node) {
     node->condition->accept(*this);
 
-    int thenOffset = emitNoop();
+    int thenOffset = emitJump();
     node->then_stmt->accept(*this);
 
     // talvez nao precise disso sempre
-    int elseOffset = emitNoop();
+    int elseOffset = emitJump();
     patchJump(OP_JMPF, thenOffset);
 
     if (node->else_stmt != nullptr) {
@@ -78,6 +79,27 @@ public:
     }
 
     patchJump(OP_JMP, elseOffset);
+  }
+
+  void visit(WhileStmt *node) {
+    int conditionOffset = getOffset();
+
+    node->condition->accept(*this);
+    int exitOffset = emitJump();
+    node->body->accept(*this);
+
+    int loopOffset = getOffset();
+    int diff = (conditionOffset - loopOffset) / 8 ;
+    Instruction loopJump = CREATE_S(OP_JMP, diff - 1);
+    emit(loopJump);
+
+    patchJump(OP_JMPF, exitOffset);
+  }
+
+  void visit(BlockStmt *node) {
+    for (auto &stmt : node->statements) {
+      stmt->accept(*this);
+    }
   }
 
   void visit(Identifier *node) {
@@ -102,14 +124,14 @@ public:
 
   void visit(AndExpr *node) {
     node->left->accept(*this);
-    int elseOffset = emitNoop();
+    int elseOffset = emitJump();
     node->right->accept(*this);
     patchJump(OP_JMPONF, elseOffset);
   }
 
   void visit(OrExpr *node) {
     node->left->accept(*this);
-    int thenOffset = emitNoop();
+    int thenOffset = emitJump();
     node->right->accept(*this);
     patchJump(OP_JMPONT, thenOffset);
   }
@@ -192,10 +214,10 @@ private:
     emit(instruction);
   }
 
-  int emitNoop() {
+  int emitJump() {
     Instruction instruction = CREATE_0(OP_JMP);
     emit(instruction);
-    return (int)(ftell(file) - sizeof(instruction));
+    return getOffset();
   }
 
   void patch(int value, int offset) {
@@ -205,7 +227,7 @@ private:
   }
 
   void patchJump(OpCode opcode, int offset) {
-    int current = (int)(ftell(file) - sizeof(Instruction));
+    int current = getOffset();
     int diff = (current - offset) / 8;
 
     fseek(file, offset, SEEK_SET);

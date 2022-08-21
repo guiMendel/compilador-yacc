@@ -82,6 +82,24 @@ public:
   AstNode *else_stmt;
 };
 
+class WhileStmt : public AstNode {
+public:
+  WhileStmt(AstNode *condition, AstNode *body)
+      : condition(condition), body(body) {}
+
+  void accept(Visitor &visitor);
+
+  AstNode *condition;
+  AstNode *body;
+};
+
+class BlockStmt : public AstNode {
+public:
+  BlockStmt() {}
+  void accept(Visitor &visitor);
+  vector<shared_ptr<AstNode>> statements;
+};
+
 class Identifier : public AstNode {
 public:
   Identifier(int index) : index(index) {};
@@ -133,6 +151,8 @@ public:
   virtual void visit(Function *node) = 0;
 
   virtual void visit(IfStmt *node) = 0;
+  virtual void visit(WhileStmt *node) = 0;
+  virtual void visit(BlockStmt *node) = 0;
   virtual void visit(Identifier *node) = 0;
 
   virtual void visit(BinaryExpr *node) = 0;

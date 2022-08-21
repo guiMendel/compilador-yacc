@@ -7,14 +7,18 @@ int main() {
   main.max_stack = 100;
 
   main.kstr.push_back("print");
+  main.kstr.push_back("n");
+
+  BlockStmt *block = new BlockStmt();
 
   Call *call = new Call(0);
-  BinaryExpr *expr = new BinaryExpr(BIN_ADD, new Number(3), new Number(1));
-  AndExpr *comp = new AndExpr(expr, new Number(2));
-  IfStmt *if_stmt = new IfStmt(comp, call, nullptr);
-  call->arguments.push_back(shared_ptr<AstNode>(expr));
+  BinaryExpr *cond = new BinaryExpr(BIN_GT, new Identifier(1), new Number(0));
+  WhileStmt *while_stmt = new WhileStmt(cond, block);
 
-  main.statements.push_back(shared_ptr<AstNode>(if_stmt));
+  call->arguments.push_back(shared_ptr<AstNode>(new Number(3)));
+  block->statements.push_back(shared_ptr<AstNode>(call));
+
+  main.statements.push_back(shared_ptr<AstNode>(while_stmt));
 
   compile(main);
 }
