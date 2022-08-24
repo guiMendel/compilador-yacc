@@ -26,13 +26,16 @@ public:
     // fetch function name
     emitUnsigned(OP_GETGLOBAL, findGlobal(node->name));
 
+    depth++;
+
     // push arguments
     for (auto &arg : node->arguments) {
       arg->accept(*this);
     }
 
-    /* emitOpCode(OP_CALL); // call function */
-    emit(CREATE_AB(OP_CALL, 1, 1)); // FIXME: figure how lua choses arg A
+    emit(CREATE_AB(OP_CALL, depth, 1));
+
+    depth--;
   }
 
   void visit(FunctionDecl *node) {
@@ -160,6 +163,11 @@ public:
 private:
   FILE *file;
   stack<Function *> functions;
+
+  /*
+   * depth of function call on the stack
+   */
+  int depth = 0;
 
   void emit(int value) { emitBlock(&value, sizeof(value)); }
 

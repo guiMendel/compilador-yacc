@@ -63,4 +63,4 @@ void compile_recursive() {
   compile(main);
 }
 
-int main() { compile_iterative(); }
+int main() { compile_recursive(); }
