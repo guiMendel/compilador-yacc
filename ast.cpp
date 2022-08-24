@@ -2,7 +2,8 @@
 
 void Number::accept(Visitor &v) { v.visit(this); }
 void Call::accept(Visitor &v) { v.visit(this); }
-void Function::accept(Visitor &v) { v.visit(this); }
+void FunctionDecl::accept(Visitor &v) { v.visit(this); }
+
 void IfStmt::accept(Visitor &v) { v.visit(this); }
 void WhileStmt::accept(Visitor &v) { v.visit(this); }
 void BlockStmt::accept(Visitor &v) { v.visit(this); }
@@ -15,3 +16,4 @@ void OrExpr::accept(Visitor &v) { v.visit(this); }
 void AssignExpr::accept(Visitor &v) { v.visit(this); }
 void ReadStmt::accept(Visitor &v) { v.visit(this); }
 void WriteStmt::accept(Visitor &v) { v.visit(this); }
+void ReturnStmt::accept(Visitor &v) { v.visit(this); }

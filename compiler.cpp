@@ -15,42 +15,9 @@ class Compiler : public Visitor {
 public:
   Compiler() { file = fopen("/tmp/simp.bin", "wb"); }
 
-  void compile(Function &main) {
-    this->main = &main;
-
+  void compile(Function *main) {
     emitHeader();
-    main.accept(*this);
-  }
-
-  void visit(Function *node) {
-    emit(node->source_name);
-
-    emit(node->line_defined);
-    emit(node->num_params);
-    emit(node->is_vararg);
-    emit(node->max_stack);
-
-    emit(node->locals);
-    emit(node->lines);
-
-    emit(node->kstr);
-    emit(node->knum);
-    /* emit(node->functions); */ emit((int)0);
-
-    emit(0x0);
-    int offset = (int)(ftell(file) - sizeof(int));
-
-    // push code
-    for (auto &stmt : node->statements) {
-      stmt->accept(*this);
-    }
-
-    // FIXME: this may only be emitted on main
-    emitOpCode(OP_END);
-
-    // write how many bytes were written
-    int diff = (int)(ftell(file) - sizeof(int) - offset) / 8;
-    patch(diff, offset);
+    emit(main);
   }
 
   void visit(Number *node) { emitSigned(OP_PUSHINT, node->value); }
@@ -64,7 +31,14 @@ public:
       arg->accept(*this);
     }
 
-    emitOpCode(OP_CALL); // call function
+    /* emitOpCode(OP_CALL); // call function */
+    emit(CREATE_AB(OP_CALL, 1, 1)); // FIXME: figure how lua choses arg A
+  }
+
+  void visit(FunctionDecl *node) {
+    // TODO: handle upvalues
+    emit(CREATE_AB(OP_CLOSURE, findGlobal(node->name), 0));
+    emitUnsigned(OP_SETGLOBAL, findGlobal(node->name));
   }
 
   void visit(IfStmt *node) {
@@ -106,7 +80,7 @@ public:
   }
 
   void visit(Identifier *node) {
-    emitUnsigned(OP_GETGLOBAL, findGlobal(node->name));
+    emitUnsigned(OP_GETLOCAL, findLocal(node->name));
   }
 
   void visit(BinaryExpr *node) {
@@ -157,7 +131,7 @@ public:
 
   void visit(AssignExpr *node) {
     node->right->accept(*this);
-    emitUnsigned(OP_SETGLOBAL, findGlobal(node->left->name));
+    emitUnsigned(OP_SETLOCAL, findLocal(node->left->name));
   }
 
   void visit(WriteStmt *node) {
@@ -175,12 +149,17 @@ public:
     // read has multiple return, so we need to call it with 1 argument
     emit(CREATE_AB(OP_CALL, 0, 1));
 
-    emitUnsigned(OP_SETGLOBAL, findGlobal(node->id->name));
+    emitUnsigned(OP_SETLOCAL, findLocal(node->id->name));
+  }
+
+  void visit(ReturnStmt *node) {
+    if (node->expr) node->expr->accept(*this);
+    emitUnsigned(OP_RETURN, 1);
   }
 
 private:
   FILE *file;
-  Function *main;
+  stack<Function *> functions;
 
   void emit(int value) { emitBlock(&value, sizeof(value)); }
 
@@ -203,6 +182,50 @@ private:
   void emit(Instruction value) { emitBlock(&value, sizeof(value)); }
 
   void emit(string s) { emit(s.c_str()); }
+  
+  void emit(Function *fn) {
+    functions.push(fn);
+
+    emit(fn->source_name);
+
+    emit(fn->line_defined);
+    emit(fn->num_params);
+    emit(fn->is_vararg);
+    emit(fn->max_stack);
+
+    /* emit(fn->locals); */
+    emit((int) fn->locals.size()); // workaround while locals aren't correct
+    for (auto &item : fn->locals) {
+      emit(item);
+      emit((int) 0);
+      emit((int) 0xff);
+    }
+
+    emit(fn->lines);
+
+    emit(fn->kstr);
+    emit(fn->knum);
+    emit(fn->functions);
+
+    emit(0x0);
+    int offset = (int)(ftell(file) - sizeof(int));
+
+    fn->code->accept(*this);
+
+    emitOpCode(OP_END);
+
+    // write how many bytes were written
+    int diff = (int)(ftell(file) - sizeof(int) - offset) / 8;
+    patch(diff, offset);
+
+    functions.pop();
+  }
+
+  void emit(Local *l) {
+    emit(l->name);
+    emit(l->start_pc);
+    emit(l->end_pc);
+  }
 
   template <typename T> void emit(T value) { emit(value); }
 
@@ -286,19 +309,30 @@ private:
     fseek(file, 0, SEEK_END);
   }
 
-  int findGlobal(string name) {
-    auto index = main->kstr.find(name);
+  int findLocal(string name) {
+    auto index = functions.top()->locals.find(name);
 
-    if (index == main->kstr.end()) {
+    if (index == functions.top()->locals.end()) {
       printf("%s not found\n", name.c_str());
       exit(1);
     }
 
-    return distance(main->kstr.begin(), index);
+    return distance(functions.top()->locals.begin(), index);
+  }
+
+  int findGlobal(string name) {
+    auto index = functions.top()->kstr.find(name);
+
+    if (index == functions.top()->kstr.end()) {
+      printf("%s not found\n", name.c_str());
+      exit(1);
+    }
+
+    return distance(functions.top()->kstr.begin(), index);
   }
 };
 
-void compile(Function &main) {
+void compile(Function *main) {
   Compiler compiler;
   compiler.compile(main);
 }

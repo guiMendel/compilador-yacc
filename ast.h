@@ -2,19 +2,17 @@
 #define __AST_H
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 using namespace std;
 
-// temporary
 typedef struct {
   char *name;
   int start_pc;
   int end_pc;
 } Local;
-//
 
 class Visitor;
 
@@ -23,13 +21,11 @@ public:
   virtual void accept(Visitor &visitor) = 0;
 };
 
-/*
- * A function definition
- */
-class Function : public AstNode {
+class BlockStmt;
+
+class Function {
 public:
-  Function(char *name, int line) : source_name(name), line_defined(line) {}
-  void accept(Visitor &visitor);
+  Function(char *name) : source_name(name){};
 
   char *source_name;
   int line_defined = 1;
@@ -37,14 +33,22 @@ public:
   char is_vararg = 0;
   int max_stack = 0;
 
-  vector<shared_ptr<AstNode>> statements;
-  vector<void *> locals;
+  set<string> locals;
   vector<void *> lines;
 
   /* constants */
   vector<int> knum;
   set<string> kstr;
-  vector<Function> functions;
+  vector<Function *> functions;
+
+  BlockStmt *code;
+};
+
+class FunctionDecl : public AstNode {
+public:
+  FunctionDecl(string name) : name(name) {}
+  void accept(Visitor &visitor);
+  string name;
 };
 
 class Number : public AstNode {
@@ -65,7 +69,7 @@ public:
   void accept(Visitor &visitor);
 
   string name;
-  vector<shared_ptr<AstNode>> arguments;
+  vector<AstNode *> arguments;
 };
 
 class IfStmt : public AstNode {
@@ -97,13 +101,13 @@ class BlockStmt : public AstNode {
 public:
   BlockStmt() {}
   void accept(Visitor &visitor);
-  vector<shared_ptr<AstNode>> statements;
+  vector<AstNode *> statements;
 };
 
 class Identifier : public AstNode {
 public:
-  Identifier(string name, Function* function) : name(name) {
-    function->kstr.insert(name);
+  Identifier(string name, Function *function) : name(name) {
+    function->locals.insert(name);
   }
   void accept(Visitor &visitor);
   string name;
@@ -173,11 +177,18 @@ public:
   AstNode *expr;
 };
 
+class ReturnStmt : public AstNode {
+public:
+  ReturnStmt(AstNode *expr) : expr(expr) {}
+  void accept(Visitor &visitor);
+  AstNode *expr;
+};
+
 class Visitor {
 public:
   virtual void visit(Number *node) = 0;
   virtual void visit(Call *node) = 0;
-  virtual void visit(Function *node) = 0;
+  virtual void visit(FunctionDecl *node) = 0;
 
   virtual void visit(IfStmt *node) = 0;
   virtual void visit(WhileStmt *node) = 0;
@@ -187,10 +198,11 @@ public:
   virtual void visit(BinaryExpr *node) = 0;
   virtual void visit(AndExpr *node) = 0;
   virtual void visit(OrExpr *node) = 0;
-
   virtual void visit(AssignExpr *node) = 0;
+
   virtual void visit(ReadStmt *node) = 0;
   virtual void visit(WriteStmt *node) = 0;
+  virtual void visit(ReturnStmt *node) = 0;
 };
 
 #endif // __AST_H

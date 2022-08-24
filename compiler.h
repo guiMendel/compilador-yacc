@@ -3,7 +3,7 @@
 
 #include "ast.h"
 
-void compile(Function &main);
+void compile(Function *main);
 
 #define ID_CHUNK	27		  /* binary files start with ESC... */
 #define	SIGNATURE	"Lua"		/* ...followed by this signature */
