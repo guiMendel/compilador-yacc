@@ -29,7 +29,7 @@ $(OUTPUT)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@ -I$(INCLUDE)
 
 $(OUTPUT)/%.o: $(TEST)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@ -Itest/greatest.h -I$(INCLUDE)
+	$(CC) $(CFLAGS) -c $< -o $@ -I$(INCLUDE)
 
 .PHONY: clean
 clean:
