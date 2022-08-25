@@ -54,3 +54,10 @@ void list_free(list* l) {
   }
 }
 
+void list_map(list *l, void (*f)(void *)) {
+  list_node *n = l->head;
+  while (n != NULL) {
+    f(n->data);
+    n = n->next;
+  }
+}
