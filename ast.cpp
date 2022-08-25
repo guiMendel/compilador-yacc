@@ -3,6 +3,7 @@
 void Number::accept(Visitor &v) { v.visit(this); }
 void Call::accept(Visitor &v) { v.visit(this); }
 void FunctionDecl::accept(Visitor &v) { v.visit(this); }
+void VarDecl::accept(Visitor &v) { v.visit(this); }
 
 void IfStmt::accept(Visitor &v) { v.visit(this); }
 void WhileStmt::accept(Visitor &v) { v.visit(this); }

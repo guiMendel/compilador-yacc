@@ -20,7 +20,10 @@ public:
     emit(main);
   }
 
-  void visit(Number *node) { emitSigned(OP_PUSHINT, node->value); }
+  void visit(Number *node) {
+    emitSigned(OP_PUSHINT, node->value);
+    depth++;
+  }
 
   void visit(Call *node) {
     // fetch function name
@@ -44,6 +47,12 @@ public:
     emitUnsigned(OP_SETGLOBAL, findGlobal(node->name));
   }
 
+  void visit(VarDecl *node) {
+    functions.top()->locals.push_back(node->ident->name);
+    emitUnsigned(OP_PUSHNIL, 1);
+    depth++;
+  }
+
   void visit(IfStmt *node) {
     node->condition->accept(*this);
 
@@ -65,6 +74,7 @@ public:
     int conditionOffset = getOffset();
 
     node->condition->accept(*this);
+
     int exitOffset = emitJump();
     node->body->accept(*this);
 
@@ -84,12 +94,14 @@ public:
 
   void visit(Identifier *node) {
     emitUnsigned(OP_GETLOCAL, findLocal(node->name));
+    depth++;
   }
 
   void visit(BinaryExpr *node) {
     node->left->accept(*this);
     node->right->accept(*this);
 
+    depth--;
     switch (node->op) {
     case BinaryOp::BIN_ADD:
       emitOpCode(OP_ADD);
@@ -123,6 +135,7 @@ public:
     int elseOffset = emitJump();
     node->right->accept(*this);
     patchJump(OP_JMPONF, elseOffset);
+    depth--;
   }
 
   void visit(OrExpr *node) {
@@ -130,19 +143,24 @@ public:
     int thenOffset = emitJump();
     node->right->accept(*this);
     patchJump(OP_JMPONT, thenOffset);
+    depth--;
   }
 
   void visit(AssignExpr *node) {
     node->right->accept(*this);
     emitUnsigned(OP_SETLOCAL, findLocal(node->left->name));
+    depth--;
   }
 
   void visit(WriteStmt *node) {
     emitUnsigned(OP_GETGLOBAL, findGlobal("print"));
 
-    node->expr->accept(*this);
+    // TODO: figure if depth has to be saved before expr
 
-    emitOpCode(OP_CALL);
+    node->expr->accept(*this);
+    depth--;
+
+    emit(CREATE_AB(OP_CALL, depth, 1));
   }
 
   void visit(ReadStmt *node) {
@@ -150,13 +168,16 @@ public:
     emitUnsigned(OP_PUSHSTRING, findGlobal("*n"));
 
     // read has multiple return, so we need to call it with 1 argument
-    emit(CREATE_AB(OP_CALL, 0, 1));
+    emit(CREATE_AB(OP_CALL, depth, 1));
+    depth -= 1;
 
     emitUnsigned(OP_SETLOCAL, findLocal(node->id->name));
   }
 
   void visit(ReturnStmt *node) {
-    if (node->expr) node->expr->accept(*this);
+    depth--; // n sei
+    if (node->expr)
+      node->expr->accept(*this);
     emitUnsigned(OP_RETURN, 1);
   }
 
@@ -190,7 +211,7 @@ private:
   void emit(Instruction value) { emitBlock(&value, sizeof(value)); }
 
   void emit(string s) { emit(s.c_str()); }
-  
+
   void emit(Function *fn) {
     functions.push(fn);
 
@@ -201,14 +222,7 @@ private:
     emit(fn->is_vararg);
     emit(fn->max_stack);
 
-    /* emit(fn->locals); */
-    emit((int) fn->locals.size()); // workaround while locals aren't correct
-    for (auto &item : fn->locals) {
-      emit(item);
-      emit((int) 0);
-      emit((int) 0xff);
-    }
-
+    emit(fn->locals);
     emit(fn->lines);
 
     emit(fn->kstr);
@@ -244,7 +258,7 @@ private:
     }
   }
 
-  template <typename T> void emit(set<T> s) {
+  template <typename T> void emit(list<T> s) {
     emit((int)s.size());
     for (auto &item : s) {
       emit(item);
@@ -318,25 +332,27 @@ private:
   }
 
   int findLocal(string name) {
-    auto index = functions.top()->locals.find(name);
-
-    if (index == functions.top()->locals.end()) {
-      printf("%s not found\n", name.c_str());
-      exit(1);
+    int index = 0;
+    for (auto &local : functions.top()->locals) {
+      if (local == name)
+        return index;
+      else
+        index++;
     }
-
-    return distance(functions.top()->locals.begin(), index);
+    printf("[%s] not found", name.c_str());
+    exit(1);
   }
 
   int findGlobal(string name) {
-    auto index = functions.top()->kstr.find(name);
-
-    if (index == functions.top()->kstr.end()) {
-      printf("%s not found\n", name.c_str());
-      exit(1);
+    int index = 0;
+    for (auto &local : functions.top()->kstr) {
+      if (local == name)
+        return index;
+      else
+        index++;
     }
-
-    return distance(functions.top()->kstr.begin(), index);
+    printf("[%s] not found", name.c_str());
+    exit(1);
   }
 };
 

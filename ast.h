@@ -1,8 +1,7 @@
 #ifndef __AST_H
 #define __AST_H
 
-#include <memory>
-#include <set>
+#include <list>
 #include <string>
 #include <vector>
 
@@ -28,17 +27,17 @@ public:
   Function(char *name) : source_name(name){};
 
   char *source_name;
-  int line_defined = 1;
+  int line_defined = 0;
   int num_params = 0;
   char is_vararg = 0;
   int max_stack = 0;
 
-  set<string> locals;
+  list<string> locals;
   vector<void *> lines;
 
   /* constants */
   vector<int> knum;
-  set<string> kstr;
+  list<string> kstr;
   vector<Function *> functions;
 
   BlockStmt *code;
@@ -106,9 +105,7 @@ public:
 
 class Identifier : public AstNode {
 public:
-  Identifier(string name, Function *function) : name(name) {
-    function->locals.insert(name);
-  }
+  Identifier(string name, Function *function) : name(name) {}
   void accept(Visitor &visitor);
   string name;
 };
@@ -150,6 +147,13 @@ public:
   AstNode *right;
 };
 
+class VarDecl : public AstNode {
+public:
+  VarDecl(Identifier *ident) : ident(ident) {}
+  void accept(Visitor &visitor);
+  Identifier *ident;
+};
+
 class AssignExpr : public AstNode {
 public:
   AssignExpr(Identifier *left, AstNode *right) : left(left), right(right) {}
@@ -161,8 +165,8 @@ public:
 class ReadStmt : public AstNode {
 public:
   ReadStmt(Identifier *id, Function *function) : id(id) {
-    function->kstr.insert("read");
-    function->kstr.insert("*n");
+    function->kstr.push_back("read");
+    function->kstr.push_back("*n");
   }
   void accept(Visitor &visitor);
   Identifier *id;
@@ -171,7 +175,7 @@ public:
 class WriteStmt : public AstNode {
 public:
   WriteStmt(AstNode *expr, Function *function) : expr(expr) {
-    function->kstr.insert("print");
+    function->kstr.push_back("print");
   }
   void accept(Visitor &visitor);
   AstNode *expr;
@@ -189,6 +193,7 @@ public:
   virtual void visit(Number *node) = 0;
   virtual void visit(Call *node) = 0;
   virtual void visit(FunctionDecl *node) = 0;
+  virtual void visit(VarDecl *node) = 0;
 
   virtual void visit(IfStmt *node) = 0;
   virtual void visit(WhileStmt *node) = 0;

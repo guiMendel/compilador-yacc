@@ -2,16 +2,19 @@
 #include "compiler.h"
 
 void compile_iterative() {
-  string source_name = "fac.simp";
+  string source_name = "=(none)";
   Function main((char *)source_name.c_str());
 
-  main.max_stack = 100;
+  main.max_stack = 4;
   main.code = new BlockStmt();
 
   Identifier *id = new Identifier("number", &main);
   Identifier *result = new Identifier("result", &main);
 
   BlockStmt *block = new BlockStmt();
+  
+  main.code->statements.push_back(new VarDecl(result));
+  main.code->statements.push_back(new VarDecl(id));
 
   main.code->statements.push_back((new AssignExpr(result, new Number(1))));
   main.code->statements.push_back((new ReadStmt(id, &main)));
@@ -21,7 +24,7 @@ void compile_iterative() {
   main.code->statements.push_back((new WriteStmt(result, &main)));
 
   block->statements.push_back(
-      (new AssignExpr(result, new BinaryExpr(BIN_MUL, result, id))));
+      (new AssignExpr(result, new BinaryExpr(BIN_MUL, id, result))));
   block->statements.push_back(
       (new AssignExpr(id, new BinaryExpr(BIN_SUB, id, new Number(1)))));
 
@@ -36,11 +39,13 @@ void compile_recursive() {
 
   Function *fac = new Function((char *)source_name.c_str());
   fac->num_params = 1;
+  // TODO: params
+  fac->locals.push_back("n");
   fac->max_stack = 100;
 
   // TODO: figure this out
-  fac->kstr.insert("fac");
-  main->kstr.insert("fac"); 
+  fac->kstr.push_front("fac");
+  main->kstr.push_front("fac"); 
 
   Identifier *n = new Identifier("n", fac);
   Call *call = new Call("fac");
@@ -63,4 +68,4 @@ void compile_recursive() {
   compile(main);
 }
 
-int main() { compile_recursive(); }
+int main() { compile_iterative(); }
