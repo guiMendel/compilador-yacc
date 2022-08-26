@@ -124,24 +124,29 @@ static void emitBinOp(AstNode *node) {
   emitNode(node->as_binop.left);
   AstNode *right = node->as_binop.right;
 
-  // increase stack
-  increaseMaxStack();
+  
   switch (node->as_binop.op) {
     case BINOP_ADD:
       if (right->type == AST_NUMBER) {
+        increaseMaxStack();
         emitLong(CREATE_S(OP_ADDI, right->as_number.value));
       } else {
-        emit(right->as_number.value);
+        emitNode(right);
         emitLong(OP_ADD);
       }
       break;
     case BINOP_SUB:
       if (node->as_binop.right->type == AST_NUMBER) {
+        increaseMaxStack();
         emitLong(CREATE_S(OP_ADDI, -right->as_number.value));
       } else {
-        emit(right->as_number.value);
+        emitNode(right);
         emitLong(OP_SUB);
       }
+      break;
+    case BINOP_MUL:
+      emitNode(right);
+      emitLong(OP_MULT);
       break;
     default:
       break;
