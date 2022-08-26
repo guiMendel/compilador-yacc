@@ -52,6 +52,19 @@ static void emitBlock(AstNode *node) {
   }
 }
 
+static int emitDummy() {
+  int offset = position;
+  emit(0x0);
+  return offset;
+}
+
+static void patchOffset(int offset, int value) {
+  int _position = position;
+  position = offset;
+  emit(value);
+  position = _position;
+}
+
 static void emitHeader() {
   emitByte(0x1b);
   emitByte('L');
@@ -82,8 +95,7 @@ static void emitFunction(Function *f) {
   emit(f->num_params);
   emitByte(f->is_vararg);
 
-  int stackOffset = position;
-  emit(f->max_stack);
+  int stackOffset = emitDummy(); // max_stack
 
   emit(0); // locals debug
   emit(0); // lines debug
@@ -92,25 +104,17 @@ static void emitFunction(Function *f) {
   emitList(&f->knum, (void (*)(void *))emit);
   emitList(&f->kfunc, (void (*)(void *))emitFunction);
 
-  int offset = position;
-  emit(0xffffffff);
+  int codeOffset = emitDummy(); // code
 
   emitNode(&f->code);
 
   emitLong(OP_END);
 
   // patch up the size
-  int diff = (position - offset) / 8;
-  position = offset;
-  emit(diff);
-  position += diff * 8;
+  patchOffset(codeOffset, (position - codeOffset) / 8);
 
   // patch up the stack size
-  // save position
-  int pos = position;
-  position = stackOffset;
-  emit(f->max_stack);
-  position = pos;
+  patchOffset(stackOffset, f->max_stack);
 
   list_pop(&functions);
 };
