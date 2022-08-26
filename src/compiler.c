@@ -1,12 +1,16 @@
 #include "compiler.h"
+#include "list.h"
 #include "opcodes.h"
 
+#include <stdio.h>
 #include <string.h>
 
 uint8_t *currentChunk;
 int position;
 
 #define emitByte(byte) currentChunk[position++] = byte;
+
+static void emitNode(AstNode *node);
 
 static void emit(unsigned long value) {
   currentChunk[position++] = (value >> 0) & 0xff;
@@ -33,6 +37,15 @@ static void emitList(list *l, void (*f)(void *)) {
   list_node *n = l->head;
   while (n != NULL) {
     f(n->data);
+    n = n->next;
+  }
+}
+
+
+static void emitBlock(AstNode* node) {
+  list_node *n = node->block.stmts.head;
+  while (n != NULL) {
+    emitNode(n->data);
     n = n->next;
   }
 }
@@ -65,7 +78,7 @@ static void emitFunction(Function *f) {
 
   emit(f->line_defined);
   emit(f->num_params);
-  emit(f->is_vararg);
+  emitByte(f->is_vararg);
   emit(f->max_stack);
 
   emit(0); // locals debug
@@ -75,18 +88,29 @@ static void emitFunction(Function *f) {
   emitList(&f->knum, (void (*)(void *))emit);
   emitList(&f->kfunc, (void (*)(void *))emitFunction);
 
-  emit(0x0);
   int offset = position;
+  emit(0xffffffff);
 
-  /* emitBlock(fn->block); */
+  emitNode(&f->block);
 
-  emit(OP_END);
+  emitSize(OP_END);
 
   // patch up the size
-  currentChunk[offset - 1] = position - offset;
+  int diff = (position - offset) / 8;
+  position = offset;
+  emit(diff);
+  position += diff * 8;
 
   /* functions.pop(); */
 };
+
+static void emitNode(AstNode* node) {
+  switch (node->type) {
+    case AST_BLOCK:
+      emitBlock(node);
+      break;
+  }
+}
 
 void compile(Function *main, uint8_t *chunk) {
   currentChunk = chunk;
