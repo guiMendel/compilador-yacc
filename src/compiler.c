@@ -12,10 +12,20 @@ int position;
 
 /** functions stack */
 list functions;
-#define increaseMaxStack() ((Function *)list_top(&functions))->max_stack++;
+int depth;
+#define currentFunction() ((Function *)list_top(&functions))
+
+static void handlePush() {
+  depth++;
+  if (depth > currentFunction()->max_stack) {
+    currentFunction()->max_stack = depth;
+  }
+}
+
+static void handlePop() { depth--; }
 
 static int findGlobal(char *name) {
-  Function *f = (Function *)list_top(&functions);
+  Function *f = currentFunction();
 
   list_node *n = f->kstr.head;
   int i = 0;
@@ -70,9 +80,11 @@ static void emitBlock(AstNode *node) {
   }
 }
 
-static int emitDummy() {
+static int emitDummy(size_t size) {
   int offset = position;
-  emit(0x0);
+  for (int i = 0; i < size; i++) {
+    emitByte(0x0);
+  }
   return offset;
 }
 
@@ -80,6 +92,14 @@ static void patchOffset(int offset, int value) {
   int _position = position;
   position = offset;
   emit(value);
+  position = _position;
+}
+
+static void patchJump(int offset, OpCode op) {
+  int _position = position;
+  int diff = position - offset - 8;
+  position = offset;
+  emitLong(CREATE_S(op, diff / 8));
   position = _position;
 }
 
@@ -113,7 +133,7 @@ static void emitFunction(Function *f) {
   emit(f->num_params);
   emitByte(f->is_vararg);
 
-  int stackOffset = emitDummy(); // max_stack
+  int stackOffset = emitDummy(sizeof(int)); // max_stack
 
   emit(0); // locals debug
   emit(0); // lines debug
@@ -122,7 +142,7 @@ static void emitFunction(Function *f) {
   emitList(&f->knum, (void (*)(void *))emit);
   emitList(&f->kfunc, (void (*)(void *))emitFunction);
 
-  int codeOffset = emitDummy(); // code
+  int codeOffset = emitDummy(sizeof(int)); // code
 
   emitNode(&f->code);
 
@@ -148,13 +168,14 @@ static void emitCompare(OpCode opcode) {
 
 static void emitBinOp(AstNode *node) {
   emitNode(node->as_binop.left);
+
   AstNode *right = node->as_binop.right;
 
   switch (node->as_binop.op) {
   case BINOP_ADD:
     if (right->type == AST_NUMBER) {
-      increaseMaxStack();
       emitLong(CREATE_S(OP_ADDI, right->as_number.value));
+      handlePush();
     } else {
       emitNode(right);
       emitLong(OP_ADD);
@@ -162,8 +183,8 @@ static void emitBinOp(AstNode *node) {
     break;
   case BINOP_SUB:
     if (node->as_binop.right->type == AST_NUMBER) {
-      increaseMaxStack();
       emitLong(CREATE_S(OP_ADDI, -right->as_number.value));
+      handlePush();
     } else {
       emitNode(right);
       emitLong(OP_SUB);
@@ -196,6 +217,8 @@ static void emitBinOp(AstNode *node) {
   default:
     break;
   }
+
+  handlePop();
 }
 
 static void emitNode(AstNode *node) {
@@ -205,7 +228,7 @@ static void emitNode(AstNode *node) {
     break;
   case AST_NUMBER:
     emitLong(CREATE_S(OP_PUSHINT, node->as_number.value));
-    increaseMaxStack();
+    handlePush();
     break;
   case AST_RETURN:
     emitNode(node->as_ret.expr);
@@ -221,7 +244,25 @@ static void emitNode(AstNode *node) {
     break;
   case AST_IDENT:
     emitLong(CREATE_U(OP_GETGLOBAL, findGlobal(node->as_ident.name)));
-    increaseMaxStack();
+    handlePush();
+    break;
+  case AST_IF:
+    emitNode(node->as_if.cond);
+    handlePop();
+
+    int thenOffset = emitDummy(sizeof(Instruction));
+    emitNode(node->as_if.then);
+
+    if (node->as_if.els != NULL) {
+      int endOffset = emitDummy(sizeof(Instruction));
+      patchJump(thenOffset, OP_JMPF);
+
+      emitNode(node->as_if.els);
+      patchJump(endOffset, OP_JMP);
+    } else {
+      patchJump(thenOffset, OP_JMPF);
+    }
+
     break;
   }
 }
@@ -229,6 +270,7 @@ static void emitNode(AstNode *node) {
 void compile(Function *main, uint8_t *chunk) {
   currentChunk = chunk;
   position = 0;
+  depth = 0;
 
   list_init(&functions);
 

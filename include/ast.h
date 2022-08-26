@@ -30,6 +30,7 @@ typedef enum {
   AST_UNOP,
   AST_IDENT,
   AST_ASSIGN,
+  AST_IF,
 } NodeType;
 
 typedef struct AstNode {
@@ -66,6 +67,12 @@ typedef struct AstNode {
       char *name;
       struct AstNode *expr;
     } as_assign;
+
+    struct {
+      struct AstNode *cond;
+      struct AstNode *then;
+      struct AstNode *els;
+    } as_if;
   };
 } AstNode;
 
@@ -76,6 +83,7 @@ void ast_binop_init(AstNode *node, BinOp op, AstNode *left, AstNode *right);
 void ast_unop_init(AstNode *node, UnOp op, AstNode *expr);
 void ast_ident_init(AstNode *node, char *name);
 void ast_assign_init(AstNode *node, char *name, AstNode *expr);
+void ast_if_init(AstNode *node, AstNode *cond, AstNode *then, AstNode *els);
 
 typedef struct {
   char *source_name;

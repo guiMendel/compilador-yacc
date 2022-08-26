@@ -42,6 +42,13 @@ void ast_assign_init(AstNode *node, char *name, AstNode *expr) {
   node->as_assign.expr = expr;
 }
 
+void ast_if_init(AstNode *node, AstNode *cond, AstNode *then, AstNode *els) {
+  node->type = AST_IF;
+  node->as_if.cond = cond;
+  node->as_if.then = then;
+  node->as_if.els = els;
+}
+
 void function_init(Function *f, char *source_name) {
   f->source_name = source_name;
   f->line_defined = 0;
