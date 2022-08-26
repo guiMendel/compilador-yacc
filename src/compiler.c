@@ -12,7 +12,16 @@ int position;
 
 /** functions stack */
 list functions;
+
+/*
+ * This is used to keep track of the number of values on the stack.
+ *
+ * This may not be the best aproach, as branches "branch" the stack. The
+ * alternative is to pass the depth as a parameter to the functions that emit
+ * code.
+ **/
 int depth;
+
 #define currentFunction() ((Function *)list_top(&functions))
 
 static void handlePush() {
@@ -233,6 +242,7 @@ static void emitNode(AstNode *node) {
   case AST_RETURN:
     emitNode(node->as_ret.expr);
     emitLong(OP_RETURN);
+    handlePop();
     break;
   case AST_BINOP:
     emitBinOp(node);
