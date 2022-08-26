@@ -274,6 +274,18 @@ static void emitNode(AstNode *node) {
     }
 
     break;
+  case AST_WHILE:;
+    int startOffset = position;
+
+    emitNode(node->as_while.cond);
+    handlePop();
+
+    int endOffset = emitDummy(sizeof(Instruction));
+    emitNode(node->as_while.body);
+
+    emitLong(CREATE_S(OP_JMP, (startOffset - position) / 8 - 1));
+    patchJump(endOffset, OP_JMPF);
+    break;
   }
 }
 

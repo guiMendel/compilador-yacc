@@ -49,6 +49,12 @@ void ast_if_init(AstNode *node, AstNode *cond, AstNode *then, AstNode *els) {
   node->as_if.els = els;
 }
 
+void ast_while_init(AstNode *node, AstNode *cond, AstNode *body) {
+  node->type = AST_WHILE;
+  node->as_while.cond = cond;
+  node->as_while.body = body;
+}
+
 void function_init(Function *f, char *source_name) {
   f->source_name = source_name;
   f->line_defined = 0;

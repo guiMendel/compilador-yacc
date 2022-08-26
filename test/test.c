@@ -5,6 +5,7 @@ SUITE_EXTERN(suite_return);
 SUITE_EXTERN(suite_binop);
 SUITE_EXTERN(suite_var);
 SUITE_EXTERN(suite_if);
+SUITE_EXTERN(suite_while);
 
 GREATEST_MAIN_DEFS();
 
@@ -15,5 +16,6 @@ int main(int argc, char **argv) {
   RUN_SUITE(suite_binop);
   RUN_SUITE(suite_var);
   RUN_SUITE(suite_if);
+  RUN_SUITE(suite_while);
   GREATEST_MAIN_END();
 }
