@@ -219,6 +219,10 @@ static void emitNode(AstNode *node) {
     char *name = node->as_assign.name;
     emitLong(CREATE_U(OP_SETGLOBAL, findGlobal(name)));
     break;
+  case AST_IDENT:
+    emitLong(CREATE_U(OP_GETGLOBAL, findGlobal(node->as_ident.name)));
+    increaseMaxStack();
+    break;
   }
 }
 
