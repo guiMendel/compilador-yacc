@@ -8,6 +8,9 @@
 uint8_t *currentChunk;
 int position;
 
+/** functions stack */
+list functions;
+
 #define emitByte(byte) currentChunk[position++] = byte;
 
 static void emitNode(AstNode *node);
@@ -19,14 +22,14 @@ static void emit(unsigned long value) {
   currentChunk[position++] = (value >> 24) & 0xff;
 }
 
-static void emitSize(unsigned long long value) {
+static void emitLong(unsigned long long value) {
   emit(value & 0xffffffff);
   emit(value >> 32);
 }
 
 static void emitString(const char *string) {
   size_t length = strlen(string) + 1; // +1 for null terminator
-  emitSize(length);
+  emitLong(length);
   for (int i = 0; i < length; i++) {
     emitByte(string[i]);
   }
@@ -41,9 +44,8 @@ static void emitList(list *l, void (*f)(void *)) {
   }
 }
 
-
-static void emitBlock(AstNode* node) {
-  list_node *n = node->block.stmts.head;
+static void emitBlock(AstNode *node) {
+  list_node *n = node->as_block.stmts.head;
   while (n != NULL) {
     emitNode(n->data);
     n = n->next;
@@ -72,13 +74,15 @@ static void emitHeader() {
 }
 
 static void emitFunction(Function *f) {
-  /* functions.push(fn); */
+  list_push(&functions, f);
 
   emitString(f->source_name);
 
   emit(f->line_defined);
   emit(f->num_params);
   emitByte(f->is_vararg);
+
+  int stackOffset = position;
   emit(f->max_stack);
 
   emit(0); // locals debug
@@ -91,9 +95,9 @@ static void emitFunction(Function *f) {
   int offset = position;
   emit(0xffffffff);
 
-  emitNode(&f->block);
+  emitNode(&f->code);
 
-  emitSize(OP_END);
+  emitLong(OP_END);
 
   // patch up the size
   int diff = (position - offset) / 8;
@@ -101,20 +105,37 @@ static void emitFunction(Function *f) {
   emit(diff);
   position += diff * 8;
 
-  /* functions.pop(); */
+  // patch up the stack size
+  // save position
+  int pos = position;
+  position = stackOffset;
+  emit(f->max_stack);
+  position = pos;
+
+  list_pop(&functions);
 };
 
-static void emitNode(AstNode* node) {
+static void emitNode(AstNode *node) {
   switch (node->type) {
-    case AST_BLOCK:
-      emitBlock(node);
-      break;
+  case AST_BLOCK:
+    emitBlock(node);
+    break;
+  case AST_NUMBER:
+    emitLong(CREATE_S(OP_PUSHINT, node->as_number.value));
+    ((Function *)list_pop(&functions))->max_stack++;
+    break;
+  case AST_RETURN:
+    emitNode(node->as_ret.expr);
+    emitLong(OP_RETURN);
+    break;
   }
 }
 
 void compile(Function *main, uint8_t *chunk) {
   currentChunk = chunk;
   position = 0;
+
+  list_init(&functions);
 
   emitHeader();
   emitFunction(main);

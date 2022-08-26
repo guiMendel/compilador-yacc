@@ -14,6 +14,10 @@ void list_push(list* l, void* data) {
   l->size++;
 }
 
+void* list_top(list* l) {
+  return l->head->data;
+}
+
 void* list_pop(list* l) {
   if (l->size == 0) {
     return NULL;

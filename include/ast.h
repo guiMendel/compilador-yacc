@@ -6,18 +6,30 @@
 
 typedef enum {
   AST_BLOCK,
+  AST_RETURN,
+  AST_NUMBER,
 } NodeType;
 
-typedef struct {
+typedef struct AstNode {
   NodeType type;
   union {
     struct {
       list stmts;
-    } block;
+    } as_block;
+
+    struct {
+      int32_t value;
+    } as_number;
+
+    struct {
+      struct AstNode *expr;
+    } as_ret;
   };
 } AstNode;
 
-void ast_node_init(AstNode *node, NodeType type);
+void ast_block_init(AstNode *node);
+void ast_number_init(AstNode *node, int32_t value);
+void ast_return_init(AstNode *node, AstNode *expr);
 
 typedef struct {
   char* source_name;
@@ -30,7 +42,7 @@ typedef struct {
   list knum;
   list kfunc;
 
-  AstNode block; // pointer to a block node
+  AstNode code; // pointer to a block node
 } Function;
 
 void function_init(Function* f, char* source_name);

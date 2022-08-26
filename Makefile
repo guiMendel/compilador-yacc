@@ -38,5 +38,5 @@ clean:
 # compile and run tests
 test: $(OUTPUT)/y.tab.c $(OUTPUT)/lex.yy.c $(OBJS) $(TESTOBJS)
 	$(CC) $(CFLAGS) -o $(OUTPUT)/$@ $(TESTOBJS) $(OBJS)
-	./$(OUTPUT)/$@
+	./$(OUTPUT)/$@ | greenest
 

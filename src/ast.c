@@ -1,14 +1,21 @@
 #include "ast.h"
 #include "list.h"
 
-void ast_node_init(AstNode *node, NodeType type) {
-  node->type = type;
+#include <stdlib.h>
 
-  switch (type) {
-  case AST_BLOCK:
-    list_init(&node->block.stmts);
-    break;
-  }
+void ast_block_init(AstNode *node) {
+  node->type = AST_BLOCK;
+  list_init(&node->as_block.stmts);
+}
+
+void ast_number_init(AstNode *node, int32_t value) {
+  node->type = AST_NUMBER;
+  node->as_number.value = value;
+}
+
+void ast_return_init(AstNode *node, AstNode *expr) {
+  node->type = AST_RETURN;
+  node->as_ret.expr = expr;
 }
 
 void function_init(Function *f, char *source_name) {
@@ -22,5 +29,5 @@ void function_init(Function *f, char *source_name) {
   list_init(&f->knum);
   list_init(&f->kfunc);
 
-  ast_node_init(&f->block, AST_BLOCK);
+  ast_block_init(&f->code);
 }
