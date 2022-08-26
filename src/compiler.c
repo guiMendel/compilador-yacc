@@ -122,16 +122,25 @@ static void emitFunction(Function *f) {
 
 static void emitBinOp(AstNode *node) {
   emitNode(node->as_binop.left);
+  AstNode *right = node->as_binop.right;
 
   // increase stack
   increaseMaxStack();
   switch (node->as_binop.op) {
     case BINOP_ADD:
-      if (node->as_binop.right->type == AST_NUMBER) {
-        emitLong(CREATE_S(OP_ADDI, node->as_binop.right->as_number.value));
+      if (right->type == AST_NUMBER) {
+        emitLong(CREATE_S(OP_ADDI, right->as_number.value));
       } else {
-        emit(node->as_binop.right->as_number.value);
+        emit(right->as_number.value);
         emitLong(OP_ADD);
+      }
+      break;
+    case BINOP_SUB:
+      if (node->as_binop.right->type == AST_NUMBER) {
+        emitLong(CREATE_S(OP_ADDI, -right->as_number.value));
+      } else {
+        emit(right->as_number.value);
+        emitLong(OP_SUB);
       }
       break;
     default:
