@@ -14,6 +14,23 @@ int position;
 list functions;
 #define increaseMaxStack() ((Function *)list_top(&functions))->max_stack++;
 
+static int findGlobal(char *name) {
+  Function *f = (Function *)list_top(&functions);
+
+  list_node *n = f->kstr.head;
+  int i = 0;
+
+  while (n != NULL) {
+    if (strcmp(name, (char *)n->data) == 0) {
+      return i;
+    }
+    n = n->next;
+  }
+
+  printf("error: global variable %s not found", name);
+  return -1;
+}
+
 static void emitNode(AstNode *node);
 
 static void emit(unsigned long value) {
@@ -197,8 +214,10 @@ static void emitNode(AstNode *node) {
   case AST_BINOP:
     emitBinOp(node);
     break;
-  default:
-    printf("Unknown node type: %d", node->type);
+  case AST_ASSIGN:
+    emitNode(node->as_assign.expr);
+    char *name = node->as_assign.name;
+    emitLong(CREATE_U(OP_SETGLOBAL, findGlobal(name)));
     break;
   }
 }

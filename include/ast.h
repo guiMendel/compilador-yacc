@@ -28,6 +28,8 @@ typedef enum {
   AST_NUMBER,
   AST_BINOP,
   AST_UNOP,
+  AST_IDENT,
+  AST_ASSIGN,
 } NodeType;
 
 typedef struct AstNode {
@@ -55,6 +57,15 @@ typedef struct AstNode {
       struct AstNode *expr;
       UnOp op;
     } as_unop;
+
+    struct {
+      char *name;
+    } as_ident;
+
+    struct {
+      char *name;
+      struct AstNode *expr;
+    } as_assign;
   };
 } AstNode;
 
@@ -63,6 +74,8 @@ void ast_number_init(AstNode *node, int32_t value);
 void ast_return_init(AstNode *node, AstNode *expr);
 void ast_binop_init(AstNode *node, BinOp op, AstNode *left, AstNode *right);
 void ast_unop_init(AstNode *node, UnOp op, AstNode *expr);
+void ast_ident_init(AstNode *node, char *name);
+void ast_assign_init(AstNode *node, char *name, AstNode *expr);
 
 typedef struct {
   char *source_name;

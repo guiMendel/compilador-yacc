@@ -31,6 +31,17 @@ void ast_unop_init(AstNode *node, UnOp op, AstNode *expr) {
   node->as_unop.op = op;
 }
 
+void ast_ident_init(AstNode *node, char *name) {
+  node->type = AST_IDENT;
+  node->as_ident.name = name;
+}
+
+void ast_assign_init(AstNode *node, char *name, AstNode *expr) {
+  node->type = AST_ASSIGN;
+  node->as_assign.name = name;
+  node->as_assign.expr = expr;
+}
+
 void function_init(Function *f, char *source_name) {
   f->source_name = source_name;
   f->line_defined = 0;
