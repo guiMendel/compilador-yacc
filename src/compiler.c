@@ -8,10 +8,11 @@
 uint8_t *currentChunk;
 int position;
 
+#define emitByte(byte) currentChunk[position++] = byte;
+
 /** functions stack */
 list functions;
-
-#define emitByte(byte) currentChunk[position++] = byte;
+#define increaseMaxStack() ((Function *)list_top(&functions))->max_stack++;
 
 static void emitNode(AstNode *node);
 
@@ -119,6 +120,25 @@ static void emitFunction(Function *f) {
   list_pop(&functions);
 };
 
+static void emitBinOp(AstNode *node) {
+  emitNode(node->as_binop.left);
+
+  // increase stack
+  increaseMaxStack();
+  switch (node->as_binop.op) {
+    case BINOP_ADD:
+      if (node->as_binop.right->type == AST_NUMBER) {
+        emitLong(CREATE_S(OP_ADDI, node->as_binop.right->as_number.value));
+      } else {
+        emit(node->as_binop.right->as_number.value);
+        emitLong(OP_ADD);
+      }
+      break;
+    default:
+      break;
+  }
+}
+
 static void emitNode(AstNode *node) {
   switch (node->type) {
   case AST_BLOCK:
@@ -126,11 +146,17 @@ static void emitNode(AstNode *node) {
     break;
   case AST_NUMBER:
     emitLong(CREATE_S(OP_PUSHINT, node->as_number.value));
-    ((Function *)list_pop(&functions))->max_stack++;
+    increaseMaxStack();
     break;
   case AST_RETURN:
     emitNode(node->as_ret.expr);
     emitLong(OP_RETURN);
+    break;
+  case AST_BINOP:
+    emitBinOp(node);
+    break;
+  default:
+    printf("Unknown node type: %d", node->type);
     break;
   }
 }

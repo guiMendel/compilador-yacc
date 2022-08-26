@@ -18,6 +18,19 @@ void ast_return_init(AstNode *node, AstNode *expr) {
   node->as_ret.expr = expr;
 }
 
+void ast_binop_init(AstNode *node, BinOp op, AstNode *left, AstNode *right) {
+  node->type = AST_BINOP;
+  node->as_binop.left = left;
+  node->as_binop.right = right;
+  node->as_binop.op = op;
+}
+
+void ast_unop_init(AstNode *node, UnOp op, AstNode *expr) {
+  node->type = AST_UNOP;
+  node->as_unop.expr = expr;
+  node->as_unop.op = op;
+}
+
 void function_init(Function *f, char *source_name) {
   f->source_name = source_name;
   f->line_defined = 0;
