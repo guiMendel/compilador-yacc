@@ -120,36 +120,64 @@ static void emitFunction(Function *f) {
   list_pop(&functions);
 };
 
+static void emitCompare(OpCode opcode) {
+  Instruction instruction = CREATE_S(opcode, 1);
+  emitLong(instruction);
+  instruction = CREATE_0(OP_PUSHNILJMP);
+  emitLong(instruction);
+  instruction = CREATE_S(OP_PUSHINT, 1);
+  emitLong(instruction);
+}
+
 static void emitBinOp(AstNode *node) {
   emitNode(node->as_binop.left);
   AstNode *right = node->as_binop.right;
 
-  
   switch (node->as_binop.op) {
-    case BINOP_ADD:
-      if (right->type == AST_NUMBER) {
-        increaseMaxStack();
-        emitLong(CREATE_S(OP_ADDI, right->as_number.value));
-      } else {
-        emitNode(right);
-        emitLong(OP_ADD);
-      }
-      break;
-    case BINOP_SUB:
-      if (node->as_binop.right->type == AST_NUMBER) {
-        increaseMaxStack();
-        emitLong(CREATE_S(OP_ADDI, -right->as_number.value));
-      } else {
-        emitNode(right);
-        emitLong(OP_SUB);
-      }
-      break;
-    case BINOP_MUL:
+  case BINOP_ADD:
+    if (right->type == AST_NUMBER) {
+      increaseMaxStack();
+      emitLong(CREATE_S(OP_ADDI, right->as_number.value));
+    } else {
       emitNode(right);
-      emitLong(OP_MULT);
-      break;
-    default:
-      break;
+      emitLong(OP_ADD);
+    }
+    break;
+  case BINOP_SUB:
+    if (node->as_binop.right->type == AST_NUMBER) {
+      increaseMaxStack();
+      emitLong(CREATE_S(OP_ADDI, -right->as_number.value));
+    } else {
+      emitNode(right);
+      emitLong(OP_SUB);
+    }
+    break;
+  case BINOP_MUL:
+    emitNode(right);
+    emitLong(OP_MULT);
+    break;
+  case BINOP_DIV:
+    emitNode(right);
+    emitLong(OP_DIV);
+    break;
+  case BINOP_EQ:
+    emitNode(right);
+    emitCompare(OP_JMPEQ);
+    break;
+  case BINOP_NEQ:
+    emitNode(right);
+    emitCompare(OP_JMPNE);
+    break;
+  case BINOP_LT:
+    emitNode(right);
+    emitCompare(OP_JMPLT);
+    break;
+  case BINOP_GT:
+    emitNode(right);
+    emitCompare(OP_JMPGT);
+    break;
+  default:
+    break;
   }
 }
 
