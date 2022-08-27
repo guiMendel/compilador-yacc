@@ -122,7 +122,7 @@ static void emitFunction(Function *f) {
 
   emitString(f->source_name);
 
-  emit(f->line_defined);
+  emit(f->line_defined + functions.size - 1);
   emit(f->params.size);
   emitByte(f->is_vararg);
 
@@ -147,6 +147,9 @@ static void emitFunction(Function *f) {
   // patch up the stack size
   patchOffset(stackOffset, f->max_stack);
 
+  // +1 for the return value
+  //
+  // TODO: this is not correct, as the function may not return
   depth -= f->params.size;
   list_pop(&functions);
 };
@@ -174,6 +177,7 @@ static void emitBinOp(AstNode *node) {
       emitNode(right);
       emitLong(OP_ADD);
     }
+    handlePop();
     break;
   case BINOP_SUB:
     if (node->as_binop.right->type == AST_NUMBER) {
@@ -183,34 +187,51 @@ static void emitBinOp(AstNode *node) {
       emitNode(right);
       emitLong(OP_SUB);
     }
+    handlePop();
     break;
   case BINOP_MUL:
     emitNode(right);
     emitLong(OP_MULT);
+    handlePop();
     break;
   case BINOP_DIV:
     emitNode(right);
     emitLong(OP_DIV);
+    handlePop();
     break;
   case BINOP_EQ:
     emitNode(right);
     emitCompare(OP_JMPEQ);
+    handlePop();
     break;
   case BINOP_NEQ:
     emitNode(right);
     emitCompare(OP_JMPNE);
+    handlePop();
     break;
   case BINOP_LT:
     emitNode(right);
     emitCompare(OP_JMPLT);
+    handlePop();
     break;
   case BINOP_GT:
     emitNode(right);
     emitCompare(OP_JMPGT);
+    handlePop();
+    break;
+  case BINOP_AND:;
+    int elseOffset = emitDummy(sizeof(Instruction));
+    handlePop();
+    emitNode(right);
+    patchJump(elseOffset, OP_JMPONF);
+    break;
+  case BINOP_OR:;
+    int thenOffset = emitDummy(sizeof(Instruction));
+    handlePop();
+    emitNode(right);
+    patchJump(thenOffset, OP_JMPONT);
     break;
   }
-
-  handlePop();
 }
 
 static void emitNode(AstNode *node) {
