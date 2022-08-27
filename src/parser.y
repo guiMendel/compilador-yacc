@@ -13,21 +13,24 @@ void yyerror(char *message);
 
 Function *fn;
 
-#define YYSTYPE AstNode *
+/* int yydebug = 1; */
 %}
 
-%token VAR
-%token ID
-%token NUM
-%token IF
-%token ELSE
-%token WHILE
-%token DO
-%token END
-%token FUNCTION
-%token RETURN
-%token WRITE
-%token READ
+%union {
+  char *string;
+  int number;
+  AstNode *node;
+  List *list;
+  int token;
+}
+
+%token <string> ID
+%token <number> NUM
+%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN WRITE READ
+
+%type <node> statements statement declaration expression operation operation2 operation3 operation4 operation5 operation6 operation7
+%type <node> function.declaration function.call
+%type <list> parameters more.parameters arguments more.arguments
 
 %right THEN ELSE
 
@@ -44,19 +47,21 @@ Function *fn;
 program : statements { fn->code = $1; }
         ;
 
-statements : empty {$$ = new_block_node(); }
+statements : empty { $$ = new_block_node(); }
            | statement statements { list_push(&$2->as_block.stmts, $1); $$ = $2; }
            | function.declaration statements
            ;
 
-function.declaration : FUNCTION ID '(' parameters ')' DO statements END
+function.declaration : FUNCTION ID '(' parameters ')' DO statements END { $$ = NULL; }
                      ;
 
-parameters : empty | ID more.parameters;
+parameters : empty { $$ = new_list(); }
+           | ID more.parameters { list_push($2, $1); $$ = $2; }
+           ; 
 
-more.parameters : empty
-               | ',' ID more.parameters
-               ;
+more.parameters : empty { $$ = new_list(); }
+                | ',' ID more.parameters { list_push($3, $2); $$ = $3; }
+                ;
 
 statement : expression ';'
           | declaration ';'
@@ -66,27 +71,29 @@ statement : expression ';'
           | DO statements END { $$ = $2; }
           | RETURN ';' { $$ = new_return_node(NULL); }
           | RETURN expression ';' { $$ = new_return_node($2); }
-          | READ ID ';'
-          | WRITE expression ';'
-          | ';'
+          | READ ID ';' { $$ = NULL; }
+          | WRITE expression ';' { $$ = NULL; }
+          | ';' { $$ = NULL; }
           ;
 
-declaration : VAR ID
+declaration : VAR ID { declareVar($2, fn); $$ = NULL; }
             ;
 
 expression : '(' expression ')' { $$ = $2; }
-           | ID '=' expression { $$ = new_assign_node(tokenString, $3); }
+           | ID '=' expression { $$ = new_assign_node($1, $3, fn); }
            | operation { $$ = $1; }
            | function.call
            ;
 
-function.call : ID '(' arguments ')'
+function.call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn); }
               ;
 
-arguments : empty | expression more.arguments;
+arguments : empty { $$ = new_list(); }
+          | expression more.arguments { list_push($2, $1); $$ = $2; }
+          ;
 
-more.arguments : empty
-               | ',' expression more.arguments
+more.arguments : empty { $$ = new_list(); }
+               | ',' expression more.arguments { list_push($3, $2); $$ = $3; }
                ;
 
 operation : operation OR operation { $$ = new_binop_node(BINOP_OR, $1, $3); }
@@ -119,8 +126,8 @@ operation6 : operation6 '*' operation6 { $$ = new_binop_node(BINOP_MUL, $1, $3);
 
 operation7 : '-' operation7 { $$ = new_unop_node(UNOP_NEG, $2); }
            | '!' operation7 { $$ = new_unop_node(UNOP_NOT, $2); }
-           | NUM { $$ = new_number_node(atoi(tokenString)); }
-           | ID { $$ = new_ident_node(tokenString); }
+           | NUM { $$ = new_number_node($1); }
+           | ID { $$ = new_ident_node($1, fn); }
            ;
 
 empty : /* empty */;
@@ -137,12 +144,15 @@ int main() {
   function_init(&f, "main");
   fn = &f;
 
-  int yydebug = 1;
-  
   yyparse();
 
   unsigned char chunk[1024];
-  compile(&f, chunk);
+  int size = compile(&f, chunk);
+
+  // write the chunk to a file
+  FILE *fp = fopen("simp.out", "wb");
+  fwrite(chunk, 1, size, fp);
+  fclose(fp);
 
   return 0;
 }

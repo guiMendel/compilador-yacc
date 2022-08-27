@@ -32,13 +32,14 @@ typedef enum {
   AST_ASSIGN,
   AST_IF,
   AST_WHILE,
+  AST_CALL,
 } NodeType;
 
 typedef struct AstNode {
   NodeType type;
   union {
     struct {
-      list stmts;
+      List stmts;
     } as_block;
 
     struct {
@@ -61,11 +62,11 @@ typedef struct AstNode {
     } as_unop;
 
     struct {
-      char *name;
+      int index;
     } as_ident;
 
     struct {
-      char *name;
+      int index;
       struct AstNode *expr;
     } as_assign;
 
@@ -79,18 +80,13 @@ typedef struct AstNode {
       struct AstNode *cond;
       struct AstNode *body;
     } as_while;
+
+    struct {
+      int index;
+      List *args;
+    } as_call;
   };
 } AstNode;
-
-AstNode *new_block_node();
-AstNode *new_number_node(int32_t value);
-AstNode *new_return_node(AstNode *expr);
-AstNode *new_binop_node(BinOp op, AstNode *left, AstNode *right);
-AstNode *new_unop_node(UnOp op, AstNode *expr);
-AstNode *new_ident_node(char *name);
-AstNode *new_assign_node(char *name, AstNode *expr);
-AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els);
-AstNode *new_while_node(AstNode *cond, AstNode *body);
 
 typedef struct {
   char *source_name;
@@ -99,12 +95,26 @@ typedef struct {
   uint8_t is_vararg;
   int max_stack;
 
-  list kstr;
-  list knum;
-  list kfunc;
+  List kstr;
+  List knum;
+  List kfunc;
 
   AstNode *code; // pointer to a block node
 } Function;
+
+AstNode *new_block_node();
+AstNode *new_number_node(int32_t value);
+AstNode *new_return_node(AstNode *expr);
+AstNode *new_binop_node(BinOp op, AstNode *left, AstNode *right);
+AstNode *new_unop_node(UnOp op, AstNode *expr);
+AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els);
+AstNode *new_while_node(AstNode *cond, AstNode *body);
+
+AstNode *new_ident_node(char *name, Function *fn);
+AstNode *new_assign_node(char *name, AstNode *expr, Function *fn);
+AstNode *new_call_node(char *name, List *args, Function *fn);
+
+void declareVar(char *name, Function *fn);
 
 void function_init(Function *f, char *source_name);
 

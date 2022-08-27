@@ -5,7 +5,7 @@
 
 #include "ast.h"
 
-void compile(Function *main, uint8_t* chunk);
+int compile(Function *main, uint8_t* chunk);
 
 #endif
 

@@ -28,11 +28,11 @@ void printNode(AstNode *node, int depth) {
     printNode(node->as_binop.right, depth + 1);
     break;
   case AST_ASSIGN:
-    printf("Assign: %s \n", node->as_assign.name);
+    printf("Assign: %d \n", node->as_assign.index);
     printNode(node->as_assign.expr, depth + 1);
     break;
   case AST_IDENT:
-    printf("Ident: %s \n", node->as_ident.name);
+    printf("Ident: %d \n", node->as_ident.index);
     break;
   case AST_IF:
     printf("%*sIf: \n", depth * 2, "");

@@ -7,7 +7,7 @@ SRC = src
 TEST = test
 
 LEX     = flex
-YACC    = bison -y
+YACC    = bison -y -t
 YFLAGS  = -d
 
 SRCS 		= $(SRC)/ast.c $(SRC)/compiler.c $(SRC)/list.c $(SRC)/printer.c

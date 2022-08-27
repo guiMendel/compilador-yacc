@@ -9,15 +9,17 @@ typedef struct list_node {
 typedef struct {
   list_node* head;
   int size;
-} list;
+} List;
 
-void list_init(list* l);
-void list_push(list* l, void* data);
-void* list_top(list* l);
-void* list_pop(list* l);
-void* list_get(list* l, int index);
-void list_set(list* l, int index, void* data);
-void list_free(list* l);
-void list_map(list* l, void (*f)(void*));
+void list_init(List* l);
+void list_push(List* l, void* data);
+void* list_top(List* l);
+void* list_pop(List* l);
+void* list_get(List* l, int index);
+void list_set(List* l, int index, void* data);
+void list_free(List* l);
+void list_map(List* l, void (*f)(void*));
+
+List* new_list();
 
 #endif // LIST_H

@@ -11,7 +11,7 @@ int position;
 #define emitByte(byte) currentChunk[position++] = byte;
 
 /** functions stack */
-list functions;
+List functions;
 
 /*
  * This is used to keep track of the number of values on the stack.
@@ -32,23 +32,6 @@ static void handlePush() {
 }
 
 static void handlePop() { depth--; }
-
-static int findGlobal(char *name) {
-  Function *f = currentFunction();
-
-  list_node *n = f->kstr.head;
-  int i = 0;
-
-  while (n != NULL) {
-    if (strcmp(name, (char *)n->data) == 0) {
-      return i;
-    }
-    n = n->next;
-  }
-
-  printf("error: global variable %s not found", name);
-  return -1;
-}
 
 static void emitNode(AstNode *node);
 
@@ -72,7 +55,7 @@ static void emitString(const char *string) {
   }
 }
 
-static void emitList(list *l, void (*f)(void *)) {
+static void emitList(List *l, void (*f)(void *)) {
   emit(l->size);
   list_node *n = l->head;
   while (n != NULL) {
@@ -81,8 +64,8 @@ static void emitList(list *l, void (*f)(void *)) {
   }
 }
 
-static void emitBlock(AstNode *node) {
-  list_node *n = node->as_block.stmts.head;
+static void emitNodeList(List *list) {
+  list_node *n = list->head;
   while (n != NULL) {
     emitNode(n->data);
     n = n->next;
@@ -231,9 +214,12 @@ static void emitBinOp(AstNode *node) {
 }
 
 static void emitNode(AstNode *node) {
+  if (node == NULL)
+    return;
+
   switch (node->type) {
   case AST_BLOCK:
-    emitBlock(node);
+    emitNodeList(&node->as_block.stmts);
     break;
   case AST_NUMBER:
     emitLong(CREATE_S(OP_PUSHINT, node->as_number.value));
@@ -249,11 +235,11 @@ static void emitNode(AstNode *node) {
     break;
   case AST_ASSIGN:
     emitNode(node->as_assign.expr);
-    char *name = node->as_assign.name;
-    emitLong(CREATE_U(OP_SETGLOBAL, findGlobal(name)));
+    emitLong(CREATE_U(OP_SETGLOBAL, node->as_assign.index));
+    handlePop();
     break;
   case AST_IDENT:
-    emitLong(CREATE_U(OP_GETGLOBAL, findGlobal(node->as_ident.name)));
+    emitLong(CREATE_U(OP_GETGLOBAL, node->as_ident.index));
     handlePush();
     break;
   case AST_IF:
@@ -286,10 +272,22 @@ static void emitNode(AstNode *node) {
     emitLong(CREATE_S(OP_JMP, (startOffset - position) / 8 - 1));
     patchJump(endOffset, OP_JMPF);
     break;
+  case AST_CALL:
+    // fetch function name
+    emitLong(CREATE_U(OP_GETGLOBAL, node->as_call.index));
+    int _depth = depth;
+
+    depth++;
+    emitNodeList(node->as_call.args);
+
+    emitLong(CREATE_AB(OP_CALL, _depth, 1));
+
+    depth--;
+    break;
   }
 }
 
-void compile(Function *main, uint8_t *chunk) {
+int compile(Function *main, uint8_t *chunk) {
   currentChunk = chunk;
   position = 0;
   depth = 0;
@@ -298,4 +296,6 @@ void compile(Function *main, uint8_t *chunk) {
 
   emitHeader();
   emitFunction(main);
+
+  return position;
 }

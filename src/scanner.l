@@ -2,36 +2,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "y.tab.h" // generated via yacc -d
 
 #include "scanner.h"
+#include "ast.h"
+#include "list.h"
 
-char tokenString[MAXTOKENLEN+1];
-#define SAVE_TOKEN strncpy(tokenString, yytext, yyleng); tokenString[yyleng] = '\0';
+#include "y.tab.h" // generated via yacc -d
+
+#define TOKEN(t) (yylval.token = t)
 %}
 
 %option noyywrap
 
 %%
-"var"                                   { return VAR; }
-"if"                                    { return IF; }
-"else"                                  { return ELSE; }
-"while"                                 { return WHILE; }
-"do"                                    { return DO; }
-"end"                                   { return END; }
-"function"                              { return FUNCTION; }
-"return"                                { return RETURN; }
-"write"                                 { return WRITE; }
-"read"                                 { return READ; }
+"var"                                   { return TOKEN(VAR); }
+"if"                                    { return TOKEN(IF); }
+"else"                                  { return TOKEN(ELSE); }
+"while"                                 { return TOKEN(WHILE); }
+"do"                                    { return TOKEN(DO); }
+"end"                                   { return TOKEN(END); }
+"function"                              { return TOKEN(FUNCTION); }
+"return"                                { return TOKEN(RETURN); }
+"write"                                 { return TOKEN(WRITE); }
+"read"                                  { return TOKEN(READ); }
 
-"=="                                    { return EQUALS; }
-"!="                                    { return NOT_EQUALS; }
-"||"                                    { return OR; }
-"&&"                                    { return AND; }
+"=="                                    { return TOKEN(EQUALS); }
+"!="                                    { return TOKEN(NOT_EQUALS); }
+"||"                                    { return TOKEN(OR); }
+"&&"                                    { return TOKEN(AND); }
 
-[0-9]+(\.[0-9]+)?([eE][0-9]+)?          { SAVE_TOKEN; return NUM; }
-[a-z|A-Z]([a-z|A-Z]|[[:digit:]]|_)*     { SAVE_TOKEN; return ID; }
-[;,!-*/+-><=&|\(\)]                     { return yytext[0]; }
+[0-9]+(\.[0-9]+)?([eE][0-9]+)?          { yylval.number = atoi(yytext); return NUM; }
+[a-z|A-Z]([a-z|A-Z]|[[:digit:]]|_)*     { yylval.string = strdup(yytext); return ID; }
+[;,!-*/+-><=&|\(\)]                     { return TOKEN(yytext[0]); }
 [ \t\f\v\n]                             { ; }
 #.*\n                                   { ; }
 %%

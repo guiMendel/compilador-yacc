@@ -1,6 +1,0 @@
-if (number > 0) do
-  return 5;
-end
-else do
-  7;
-end

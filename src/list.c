@@ -1,12 +1,19 @@
 #include "list.h"
 #include "stdlib.h"
 
-void list_init(list* l) {
+List* new_list() {
+  List* l = malloc(sizeof(List));
+  l->head = NULL;
+  l->size = 0;
+  return l;
+}
+
+void list_init(List* l) {
   l->head = NULL;
   l->size = 0;
 }
 
-void list_push(list* l, void* data) {
+void list_push(List* l, void* data) {
   list_node* n = malloc(sizeof(*n));
   n->data = data;
   n->next = l->head;
@@ -14,11 +21,11 @@ void list_push(list* l, void* data) {
   l->size++;
 }
 
-void* list_top(list* l) {
+void* list_top(List* l) {
   return l->head->data;
 }
 
-void* list_pop(list* l) {
+void* list_pop(List* l) {
   if (l->size == 0) {
     return NULL;
   }
@@ -30,7 +37,7 @@ void* list_pop(list* l) {
   return data;
 }
 
-void* list_get(list* l, int index) {
+void* list_get(List* l, int index) {
   if (index >= l->size) {
     return NULL;
   }
@@ -41,7 +48,7 @@ void* list_get(list* l, int index) {
   return n->data;
 }
 
-void list_set(list* l, int index, void* data) {
+void list_set(List* l, int index, void* data) {
   if (index >= l->size) {
     return;
   }
@@ -52,13 +59,13 @@ void list_set(list* l, int index, void* data) {
   n->data = data;
 }
 
-void list_free(list* l) {
+void list_free(List* l) {
   while (l->size > 0) {
     list_pop(l);
   }
 }
 
-void list_map(list *l, void (*f)(void *)) {
+void list_map(List *l, void (*f)(void *)) {
   list_node *n = l->head;
   while (n != NULL) {
     f(n->data);

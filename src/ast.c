@@ -1,6 +1,9 @@
 #include "ast.h"
+#include "list.h"
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 AstNode *new_block_node() {
   AstNode *node = malloc(sizeof(*node));
@@ -40,21 +43,6 @@ AstNode *new_unop_node(UnOp op, AstNode *expr) {
   return node;
 }
 
-AstNode *new_ident_node(char *name) {
-  AstNode *node = malloc(sizeof(*node));
-  node->type = AST_IDENT;
-  node->as_ident.name = name;
-  return node;
-}
-
-AstNode *new_assign_node(char *name, AstNode *expr) {
-  AstNode *node = malloc(sizeof(*node));
-  node->type = AST_ASSIGN;
-  node->as_assign.name = name;
-  node->as_assign.expr = expr;
-  return node;
-}
-
 AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_IF;
@@ -72,6 +60,49 @@ AstNode *new_while_node(AstNode *cond, AstNode *body) {
   return node;
 }
 
+static int findGlobal(char *name, Function *fn) {
+  list_node *n = fn->kstr.head;
+  int i = 0;
+
+  while (n != NULL) {
+    if (strcmp(name, (char *)n->data) == 0) {
+      return i;
+    }
+    n = n->next;
+    i++;
+  }
+
+  printf("error: global variable %s not found", name);
+  return -1;
+}
+
+void declareVar(char *name, Function *fn) {
+  list_push(&fn->kstr, name);
+}
+
+AstNode *new_ident_node(char *name, Function *fn) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_IDENT;
+  node->as_ident.index = findGlobal(name, fn);
+  return node;
+}
+
+AstNode *new_assign_node(char *name, AstNode *expr, Function *fn) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_ASSIGN;
+  node->as_assign.index = findGlobal(name, fn);
+  node->as_assign.expr = expr;
+  return node;
+}
+
+AstNode *new_call_node(char *name, List* args, Function *fn) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_CALL;
+  node->as_call.index = findGlobal(name, fn);
+  node->as_call.args = args;
+  return node;
+}
+
 void function_init(Function *f, char *source_name) {
   f->source_name = source_name;
   f->line_defined = 0;
@@ -82,4 +113,11 @@ void function_init(Function *f, char *source_name) {
   list_init(&f->kstr);
   list_init(&f->knum);
   list_init(&f->kfunc);
+
+  /*
+   * Add library functions to the function's constant table.
+   */
+  list_push(&f->kstr, "print");
+  list_push(&f->kstr, "read");
+  list_push(&f->kstr, "*n");
 }
