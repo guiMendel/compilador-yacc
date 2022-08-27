@@ -28,7 +28,7 @@ Function *fn;
 %token <number> NUM
 %token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ
 
-%type <node> statements statement declaration expression operation operation2 operation3 operation4 operation5 operation6 operation7
+%type <node> statements statement declaration expression
 %type <node> function.declaration function.call
 %type <list> parameters more.parameters arguments more.arguments
 
@@ -80,8 +80,21 @@ declaration : VAR ID { declareVar($2, fn); $$ = NULL; }
 
 expression : '(' expression ')' { $$ = $2; }
            | ID '=' expression { $$ = new_assign_node($1, $3, fn); }
-           | operation { $$ = $1; }
            | function.call { $$ = $1; }
+           | expression OR expression { $$ = new_binop_node(BINOP_OR, $1, $3); }
+           | expression AND expression { $$ = new_binop_node(BINOP_AND, $1, $3); }
+           | expression EQUALS expression { $$ = new_binop_node(BINOP_EQ, $1, $3); }
+           | expression NOT_EQUALS expression { $$ = new_binop_node(BINOP_NEQ, $1, $3); }
+           | expression '<' expression { $$ = new_binop_node(BINOP_LT, $1, $3); }
+           | expression '>' expression { $$ = new_binop_node(BINOP_GT, $1, $3); }
+           | expression '+' expression { $$ = new_binop_node(BINOP_ADD, $1, $3); }
+           | expression '-' expression { $$ = new_binop_node(BINOP_SUB, $1, $3); }
+           | expression '*' expression { $$ = new_binop_node(BINOP_MUL, $1, $3); }
+           | expression '/' expression { $$ = new_binop_node(BINOP_DIV, $1, $3); }
+           | '-' expression { $$ = new_unop_node(UNOP_NEG, $2); }
+           | '!' expression { $$ = new_unop_node(UNOP_NOT, $2); }
+           | NUM { $$ = new_number_node($1); }
+           | ID { $$ = new_ident_node($1, fn); }
            ;
 
 function.call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn); }
@@ -94,40 +107,6 @@ arguments : empty { $$ = new_list(); }
 more.arguments : empty { $$ = new_list(); }
                | ',' expression more.arguments { list_push($3, $2); $$ = $3; }
                ;
-
-operation : operation OR operation { $$ = new_binop_node(BINOP_OR, $1, $3); }
-          | operation2 { $$ = $1; }
-          ;
-
-operation2 : operation2 AND operation2 { $$ = new_binop_node(BINOP_AND, $1, $3); }
-           | operation3 { $$ = $1; }
-           ;
-
-operation3 : operation3 EQUALS operation3 { $$ = new_binop_node(BINOP_EQ, $1, $3); }
-           | operation3 NOT_EQUALS operation3 { $$ = new_binop_node(BINOP_NEQ, $1, $3); }
-           | operation4 { $$ = $1; }
-           ;
-
-operation4 : operation4 '<' operation4 { $$ = new_binop_node(BINOP_LT, $1, $3); }
-           | operation4 '>' operation4 { $$ = new_binop_node(BINOP_GT, $1, $3); }
-           | operation5 { $$ = $1; }
-           ;
-
-operation5 : operation5 '+' operation5 { $$ = new_binop_node(BINOP_ADD, $1, $3); }
-           | operation5 '-' operation5 { $$ = new_binop_node(BINOP_SUB, $1, $3); }
-           | operation6 { $$ = $1; }
-           ;
-
-operation6 : expression '*' expression { $$ = new_binop_node(BINOP_MUL, $1, $3); }
-           | expression '/' expression { $$ = new_binop_node(BINOP_DIV, $1, $3); }
-           | operation7 { $$ = $1; }
-           ;
-
-operation7 : '-' expression { $$ = new_unop_node(UNOP_NEG, $2); }
-           | '!' expression { $$ = new_unop_node(UNOP_NOT, $2); }
-           | NUM { $$ = new_number_node($1); }
-           | ID { $$ = new_ident_node($1, fn); }
-           ;
 
 empty : /* empty */;
 %%
