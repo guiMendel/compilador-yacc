@@ -3,13 +3,14 @@
 #include <stdlib.h>
 
 extern int yylex();
+extern int yylineno;
+extern FILE *yyin;
 void yyerror(char *message);
 
 #include "ast.h"
 #include "list.h"
 #include "compiler.h"
-#include "printer.h"
-#include "scanner.h"
+#include "parser.h"
 
 static List functions;
 #define fn() ((Function *)list_top(&functions))
@@ -128,26 +129,17 @@ empty : /* empty */;
 
 
 void yyerror(char *message) {
-  fprintf(stderr, "Error: %s\n", message);
+  fprintf(stderr, "Error: %s at %d\n", message, yylineno);
   exit(1);
 }
 
-int main() {
-  Function f;
-  function_init(&f, "=(none)");
-
+Function* parse(FILE *file) {
   list_init(&functions);
-  list_push(&functions, &f);
+  list_push(&functions, new_function("=(main)", NULL));
+
+  yyin = file;
 
   yyparse();
 
-  unsigned char chunk[1024];
-  int size = compile(&f, chunk);
-
-  // write the chunk to a file
-  FILE *fp = fopen("simp.out", "wb");
-  fwrite(chunk, 1, size, fp);
-  fclose(fp);
-
-  return 0;
+  return fn();
 }

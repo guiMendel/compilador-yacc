@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "scanner.h"
 #include "ast.h"
 #include "list.h"
 
@@ -13,6 +12,9 @@
 %}
 
 %option noyywrap
+%option nounput
+%option noinput
+%option yylineno
 
 %%
 "var"                                   { return TOKEN(VAR); }

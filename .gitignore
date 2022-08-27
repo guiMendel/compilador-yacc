@@ -10,3 +10,6 @@ compile_commands.json
 # flex/bison
 y.tab.h
 parse.c
+
+lua
+lua4

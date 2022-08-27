@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-uint8_t *currentChunk;
+char *currentChunk;
 int position;
 
 #define emitByte(byte) currentChunk[position++] = byte;
@@ -334,7 +334,7 @@ static void emitNode(AstNode *node) {
   }
 }
 
-int compile(Function *main, uint8_t *chunk) {
+int compile(Function *main, char *chunk) {
   currentChunk = chunk;
   position = 0;
   depth = 0;
