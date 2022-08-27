@@ -11,7 +11,7 @@ int position;
 #define emitByte(byte) currentChunk[position++] = byte;
 
 /** functions stack */
-List functions;
+static List functions;
 
 /*
  * This is used to keep track of the number of values on the stack.
@@ -118,11 +118,12 @@ static void emitHeader() {
 
 static void emitFunction(Function *f) {
   list_push(&functions, f);
+  depth += f->params.size;
 
   emitString(f->source_name);
 
   emit(f->line_defined);
-  emit(f->num_params);
+  emit(f->params.size);
   emitByte(f->is_vararg);
 
   int stackOffset = emitDummy(sizeof(int)); // max_stack
@@ -146,6 +147,7 @@ static void emitFunction(Function *f) {
   // patch up the stack size
   patchOffset(stackOffset, f->max_stack);
 
+  depth -= f->params.size;
   list_pop(&functions);
 };
 
@@ -227,8 +229,8 @@ static void emitNode(AstNode *node) {
     break;
   case AST_RETURN:
     emitNode(node->as_ret.expr);
-    emitLong(OP_RETURN);
     handlePop();
+    emitLong(CREATE_U(OP_RETURN, depth));
     break;
   case AST_BINOP:
     emitBinOp(node);
@@ -246,11 +248,13 @@ static void emitNode(AstNode *node) {
     break;
   case AST_ASSIGN:
     emitNode(node->as_assign.expr);
-    emitLong(CREATE_U(OP_SETGLOBAL, node->as_assign.index));
+    emitLong(CREATE_U(node->as_assign.is_local ? OP_SETLOCAL : OP_SETGLOBAL,
+                      node->as_assign.index));
     handlePop();
     break;
   case AST_IDENT:
-    emitLong(CREATE_U(OP_GETGLOBAL, node->as_ident.index));
+    emitLong(CREATE_U(node->as_ident.is_local ? OP_GETLOCAL : OP_GETGLOBAL,
+                      node->as_ident.index));
     handlePush();
     break;
   case AST_IF:
@@ -303,6 +307,10 @@ static void emitNode(AstNode *node) {
     emitLong(CREATE_AB(OP_CALL, depth, 1));
 
     emitLong(CREATE_U(OP_SETGLOBAL, node->as_read.index));
+    break;
+  case AST_FUNCTION:
+    emitLong(CREATE_AB(OP_CLOSURE, node->as_function.fn_index, 0));
+    emitLong(CREATE_U(OP_SETGLOBAL, node->as_function.name_index));
     break;
   }
 }

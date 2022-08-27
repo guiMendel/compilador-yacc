@@ -72,7 +72,21 @@ static int findGlobal(char *name, Function *fn) {
     i++;
   }
 
-  printf("error: global variable %s not found", name);
+  return -1;
+}
+
+static int findLocal(char *name, Function *fn) {
+  list_node *n = fn->params.head;
+  int i = 0;
+
+  while (n != NULL) {
+    if (strcmp(name, (char *)n->data) == 0) {
+      return i;
+    }
+    n = n->next;
+    i++;
+  }
+
   return -1;
 }
 
@@ -83,14 +97,44 @@ void declareVar(char *name, Function *fn) {
 AstNode *new_ident_node(char *name, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_IDENT;
-  node->as_ident.index = findGlobal(name, fn);
+
+  node->as_ident.is_local = 0;
+
+  int index = findLocal(name, fn);
+  if (index == -1) {
+    index = findGlobal(name, fn);
+    if (index == -1) {
+      printf("Error: Unknown variable %s\n", name);
+      exit(1);
+    }
+  } else {
+    node->as_ident.is_local = 1;
+  }
+
+  node->as_ident.index = index;
+
   return node;
 }
 
 AstNode *new_assign_node(char *name, AstNode *expr, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_ASSIGN;
-  node->as_assign.index = findGlobal(name, fn);
+
+  node->as_assign.is_local = 0;
+
+  int index = findLocal(name, fn);
+  if (index == -1) {
+    index = findGlobal(name, fn);
+    if (index == -1) {
+      printf("Error: Unknown variable %s\n", name);
+      exit(1);
+    }
+  } else {
+    node->as_assign.is_local = 1;
+  }
+
+  node->as_assign.index = index;
+
   node->as_assign.expr = expr;
   return node;
 }
@@ -110,12 +154,32 @@ AstNode *new_read_node(char *name, Function *fn) {
   return node;
 }
 
+AstNode *new_function_node(char *name, List *args, Function *fn) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_FUNCTION;
+
+  node->as_function.fn_index = 0;
+
+  // attempt find fn in parent
+  list_node *n = fn->kfunc.head;
+  while (n != NULL && n->data != fn) {
+    n = n->next;
+    node->as_function.fn_index++;
+  }
+
+  node->as_function.name_index = findGlobal(name, fn->parent);
+  node->as_function.args = args;
+  return node;
+}
+
 void function_init(Function *f, char *source_name) {
   f->source_name = source_name;
   f->line_defined = 0;
-  f->num_params = 0;
+
   f->is_vararg = 0;
   f->max_stack = 0;
+
+  list_init(&f->params);
 
   list_init(&f->kstr);
   list_init(&f->knum);
@@ -127,4 +191,11 @@ void function_init(Function *f, char *source_name) {
   list_append(&f->kstr, "print");
   list_append(&f->kstr, "read");
   list_append(&f->kstr, "*n");
+}
+
+Function *new_function(char *source_name, Function *parent) {
+  Function *f = malloc(sizeof(*f));
+  function_init(f, source_name);
+  f->parent = parent;
+  return f;
 }

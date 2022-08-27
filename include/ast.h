@@ -34,6 +34,7 @@ typedef enum {
   AST_WHILE,
   AST_CALL,
   AST_READ,
+  AST_FUNCTION,
 } NodeType;
 
 typedef struct AstNode {
@@ -64,10 +65,12 @@ typedef struct AstNode {
 
     struct {
       int index;
+      int is_local;
     } as_ident;
 
     struct {
       int index;
+      int is_local;
       struct AstNode *expr;
     } as_assign;
 
@@ -90,19 +93,33 @@ typedef struct AstNode {
     struct {
       int index;
     } as_read;
+
+    struct {
+      int name_index;
+      int fn_index;
+      List *args;
+    } as_function;
   };
 } AstNode;
 
-typedef struct {
+/*
+ * A function prototype.
+ */
+typedef struct Function {
   char *source_name;
-  int line_defined;
-  int num_params;
-  uint8_t is_vararg;
+
+  List params;
   int max_stack;
+
+  /* from lua (always 0) */
+  int line_defined;
+  uint8_t is_vararg;
 
   List kstr;
   List knum;
   List kfunc;
+
+  struct Function *parent;
 
   AstNode *code; // pointer to a block node
 } Function;
@@ -120,8 +137,11 @@ AstNode *new_assign_node(char *name, AstNode *expr, Function *fn);
 AstNode *new_call_node(char *name, List *args, Function *fn);
 AstNode *new_read_node(char *name, Function *fn);
 
+AstNode *new_function_node(char *name, List *params, Function *fn);
+
 void declareVar(char *name, Function *fn);
 
 void function_init(Function *f, char *source_name);
+Function *new_function(char *source_name, Function *parent);
 
 #endif // AST_H

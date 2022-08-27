@@ -11,7 +11,8 @@ void yyerror(char *message);
 #include "printer.h"
 #include "scanner.h"
 
-Function *fn;
+static List functions;
+#define fn() ((Function *)list_top(&functions))
 
 /* int yydebug = 1; */
 %}
@@ -28,9 +29,8 @@ Function *fn;
 %token <number> NUM
 %token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ
 
-%type <node> statements statement declaration expression
-%type <node> function.declaration function.call
-%type <list> parameters more.parameters arguments more.arguments
+%type <node> statements statement declaration expression function_declaration function_call
+%type <list> parameters more_parameters arguments more_arguments
 
 %right THEN ELSE
 
@@ -44,23 +44,34 @@ Function *fn;
 %right '!'
 
 %%
-program : statements { fn->code = $1; }
+program : statements { fn()->code = $1; }
         ;
 
 statements : empty { $$ = new_block_node(); }
            | statement statements { list_push(&$2->as_block.stmts, $1); $$ = $2; }
-           | function.declaration statements
+           | function_declaration statements { list_push(&$2->as_block.stmts, $1); $$ = $2; }
            ;
 
-function.declaration : FUNCTION ID '(' parameters ')' DO statements END { $$ = NULL; }
+function_declaration : FUNCTION ID 
+                      {
+                        Function *function = new_function("=(none)", fn());
+                        declareVar($2, fn());
+                        list_push(&fn()->kfunc, function);
+                        list_push(&functions, function);
+                      }
+                     '(' parameters ')' statements END 
+                      { 
+                        fn()->code = $7;
+                        $$ = new_function_node($2, $5, (Function*)list_pop(&functions));
+                      }
                      ;
 
-parameters : empty { $$ = new_list(); }
-           | ID more.parameters { list_push($2, $1); $$ = $2; }
+parameters : empty { $$ = &fn()->params; }
+           | ID more_parameters { list_push($2, $1); $$ = $2; }
            ; 
 
-more.parameters : empty { $$ = new_list(); }
-                | ',' ID more.parameters { list_push($3, $2); $$ = $3; }
+more_parameters : empty { $$ = &fn()->params; }
+                | ',' ID more_parameters { list_push($3, $2); $$ = $3; }
                 ;
 
 statement : expression ';'
@@ -71,16 +82,16 @@ statement : expression ';'
           | DO statements END { $$ = $2; }
           | RETURN ';' { $$ = new_return_node(NULL); }
           | RETURN expression ';' { $$ = new_return_node($2); }
-          | READ ID ';' { $$ = new_read_node($2, fn); }
+          | READ ID ';' { $$ = new_read_node($2, fn()); }
           | ';' { $$ = NULL; }
           ;
 
-declaration : VAR ID { declareVar($2, fn); $$ = NULL; }
+declaration : VAR ID { declareVar($2, fn()); $$ = NULL; }
             ;
 
 expression : '(' expression ')' { $$ = $2; }
-           | ID '=' expression { $$ = new_assign_node($1, $3, fn); }
-           | function.call { $$ = $1; }
+           | ID '=' expression { $$ = new_assign_node($1, $3, fn()); }
+           | function_call { $$ = $1; }
            | expression OR expression { $$ = new_binop_node(BINOP_OR, $1, $3); }
            | expression AND expression { $$ = new_binop_node(BINOP_AND, $1, $3); }
            | expression EQUALS expression { $$ = new_binop_node(BINOP_EQ, $1, $3); }
@@ -94,18 +105,18 @@ expression : '(' expression ')' { $$ = $2; }
            | '-' expression { $$ = new_unop_node(UNOP_NEG, $2); }
            | '!' expression { $$ = new_unop_node(UNOP_NOT, $2); }
            | NUM { $$ = new_number_node($1); }
-           | ID { $$ = new_ident_node($1, fn); }
+           | ID { $$ = new_ident_node($1, fn()); }
            ;
 
-function.call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn); }
+function_call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn()); }
               ;
 
 arguments : empty { $$ = new_list(); }
-          | expression more.arguments { list_push($2, $1); $$ = $2; }
+          | expression more_arguments { list_push($2, $1); $$ = $2; }
           ;
 
-more.arguments : empty { $$ = new_list(); }
-               | ',' expression more.arguments { list_push($3, $2); $$ = $3; }
+more_arguments : empty { $$ = new_list(); }
+               | ',' expression more_arguments { list_push($3, $2); $$ = $3; }
                ;
 
 empty : /* empty */;
@@ -119,8 +130,10 @@ void yyerror(char *message) {
 
 int main() {
   Function f;
-  function_init(&f, "main");
-  fn = &f;
+  function_init(&f, "=(none)");
+
+  list_init(&functions);
+  list_push(&functions, &f);
 
   yyparse();
 

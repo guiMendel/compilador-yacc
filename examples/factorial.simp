@@ -1,4 +1,4 @@
-function factorial(number) do
+function factorial(number)
   # Accumulates the result
   var result;
 
@@ -17,4 +17,4 @@ var testNumber;
 
 read testNumber;
 
-write factorial(testNumber);
+print(factorial(testNumber));
