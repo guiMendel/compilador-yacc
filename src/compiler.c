@@ -153,7 +153,7 @@ static void emitFunction(Function *f) {
 
   int codeOffset = emitDummy(sizeof(int)); // code
 
-  emitNode(&f->code);
+  emitNode(f->code);
 
   emitLong(OP_END);
 

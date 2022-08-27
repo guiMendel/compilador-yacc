@@ -35,8 +35,9 @@ void printNode(AstNode *node, int depth) {
     printf("Ident: %s \n", node->as_ident.name);
     break;
   case AST_IF:
-    printf("If: \n");
+    printf("%*sIf: \n", depth * 2, "");
     printNode(node->as_if.cond, depth + 1);
+    printf("%*sThen: \n", depth * 2, "");
     printNode(node->as_if.then, depth + 1);
     if (node->as_if.els != NULL) {
       printf("%*s", depth * 2, "");

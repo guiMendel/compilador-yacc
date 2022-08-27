@@ -1,58 +1,75 @@
 #include "ast.h"
-#include "list.h"
 
 #include <stdlib.h>
 
-void ast_block_init(AstNode *node) {
+AstNode *new_block_node() {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_BLOCK;
   list_init(&node->as_block.stmts);
+  return node;
 }
 
-void ast_number_init(AstNode *node, int32_t value) {
+AstNode *new_number_node(int32_t value) {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_NUMBER;
   node->as_number.value = value;
+  return node;
 }
 
-void ast_return_init(AstNode *node, AstNode *expr) {
+AstNode *new_return_node(AstNode *expr) {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_RETURN;
   node->as_ret.expr = expr;
+  return node;
 }
 
-void ast_binop_init(AstNode *node, BinOp op, AstNode *left, AstNode *right) {
+AstNode *new_binop_node(BinOp op, AstNode *left, AstNode *right) {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_BINOP;
+  node->as_binop.op = op;
   node->as_binop.left = left;
   node->as_binop.right = right;
-  node->as_binop.op = op;
+  return node;
 }
 
-void ast_unop_init(AstNode *node, UnOp op, AstNode *expr) {
+AstNode *new_unop_node(UnOp op, AstNode *expr) {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_UNOP;
-  node->as_unop.expr = expr;
   node->as_unop.op = op;
+  node->as_unop.expr = expr;
+  return node;
 }
 
-void ast_ident_init(AstNode *node, char *name) {
+AstNode *new_ident_node(char *name) {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_IDENT;
   node->as_ident.name = name;
+  return node;
 }
 
-void ast_assign_init(AstNode *node, char *name, AstNode *expr) {
+AstNode *new_assign_node(char *name, AstNode *expr) {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_ASSIGN;
   node->as_assign.name = name;
   node->as_assign.expr = expr;
+  return node;
 }
 
-void ast_if_init(AstNode *node, AstNode *cond, AstNode *then, AstNode *els) {
+AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els) {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_IF;
   node->as_if.cond = cond;
   node->as_if.then = then;
   node->as_if.els = els;
+  return node;
 }
 
-void ast_while_init(AstNode *node, AstNode *cond, AstNode *body) {
+AstNode *new_while_node(AstNode *cond, AstNode *body) {
+  AstNode *node = malloc(sizeof(*node));
   node->type = AST_WHILE;
   node->as_while.cond = cond;
   node->as_while.body = body;
+  return node;
 }
 
 void function_init(Function *f, char *source_name) {
@@ -65,6 +82,4 @@ void function_init(Function *f, char *source_name) {
   list_init(&f->kstr);
   list_init(&f->knum);
   list_init(&f->kfunc);
-
-  /* ast_block_init(&f->code); */
 }

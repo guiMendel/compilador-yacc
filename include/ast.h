@@ -82,15 +82,15 @@ typedef struct AstNode {
   };
 } AstNode;
 
-void ast_block_init(AstNode *node);
-void ast_number_init(AstNode *node, int32_t value);
-void ast_return_init(AstNode *node, AstNode *expr);
-void ast_binop_init(AstNode *node, BinOp op, AstNode *left, AstNode *right);
-void ast_unop_init(AstNode *node, UnOp op, AstNode *expr);
-void ast_ident_init(AstNode *node, char *name);
-void ast_assign_init(AstNode *node, char *name, AstNode *expr);
-void ast_if_init(AstNode *node, AstNode *cond, AstNode *then, AstNode *els);
-void ast_while_init(AstNode *node, AstNode *cond, AstNode *body);
+AstNode *new_block_node();
+AstNode *new_number_node(int32_t value);
+AstNode *new_return_node(AstNode *expr);
+AstNode *new_binop_node(BinOp op, AstNode *left, AstNode *right);
+AstNode *new_unop_node(UnOp op, AstNode *expr);
+AstNode *new_ident_node(char *name);
+AstNode *new_assign_node(char *name, AstNode *expr);
+AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els);
+AstNode *new_while_node(AstNode *cond, AstNode *body);
 
 typedef struct {
   char *source_name;

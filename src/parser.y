@@ -41,10 +41,10 @@ Function *fn;
 %right '!'
 
 %%
-program : statements { printNode($1, 0); }
+program : statements { fn->code = $1; }
         ;
 
-statements : empty { AstNode block; ast_block_init(&block); $$ = &block; }
+statements : empty {$$ = new_block_node(); }
            | statement statements { list_push(&$2->as_block.stmts, $1); $$ = $2; }
            | function.declaration statements
            ;
@@ -58,14 +58,14 @@ more.parameters : empty
                | ',' ID more.parameters
                ;
 
-statement : expression ';' { $$ = $1; }
+statement : expression ';'
           | declaration ';'
-          | IF '(' expression ')' statement                   %prec THEN
-          | IF '(' expression ')' statement ELSE statement
-          | WHILE '(' expression ')' statement
-          | DO statements END
-          | RETURN ';'
-          | RETURN expression ';'
+          | IF '(' expression ')' statement                   %prec THEN { $$ = new_if_node($3, $5, NULL); }
+          | IF '(' expression ')' statement ELSE statement   { $$ = new_if_node($3, $5, $7); }
+          | WHILE '(' expression ')' statement { $$ = new_while_node($3, $5); }
+          | DO statements END { $$ = $2; }
+          | RETURN ';' { $$ = new_return_node(NULL); }
+          | RETURN expression ';' { $$ = new_return_node($2); }
           | READ ID ';'
           | WRITE expression ';'
           | ';'
@@ -74,8 +74,8 @@ statement : expression ';' { $$ = $1; }
 declaration : VAR ID
             ;
 
-expression : '(' expression ')'
-           | ID '=' expression
+expression : '(' expression ')' { $$ = $2; }
+           | ID '=' expression { $$ = new_assign_node(tokenString, $3); }
            | operation { $$ = $1; }
            | function.call
            ;
@@ -89,38 +89,38 @@ more.arguments : empty
                | ',' expression more.arguments
                ;
 
-operation : operation OR operation { AstNode node; ast_binop_init(&node, BINOP_OR, $1, $3); $$ = &node; }
+operation : operation OR operation { $$ = new_binop_node(BINOP_OR, $1, $3); }
           | operation2 { $$ = $1; }
           ;
 
-operation2 : operation2 AND operation2 { AstNode node; ast_binop_init(&node, BINOP_AND, $1, $3); $$ = &node; }
+operation2 : operation2 AND operation2 { $$ = new_binop_node(BINOP_AND, $1, $3); }
            | operation3 { $$ = $1; }
            ;
 
-operation3 : operation3 EQUALS operation3 { AstNode node; ast_binop_init(&node, BINOP_EQ, $1, $3); $$ = &node; }
-           | operation3 NOT_EQUALS operation3 { AstNode node; ast_binop_init(&node, BINOP_NEQ, $1, $3); $$ = &node; }
+operation3 : operation3 EQUALS operation3 { $$ = new_binop_node(BINOP_EQ, $1, $3); }
+           | operation3 NOT_EQUALS operation3 { $$ = new_binop_node(BINOP_NEQ, $1, $3); }
            | operation4 { $$ = $1; }
            ;
 
-operation4 : operation4 '<' operation4 { AstNode node; ast_binop_init(&node, BINOP_LT, $1, $3); $$ = &node; }
-           | operation4 '>' operation4 { AstNode node; ast_binop_init(&node, BINOP_GT, $1, $3); $$ = &node; }
+operation4 : operation4 '<' operation4 { $$ = new_binop_node(BINOP_LT, $1, $3); }
+           | operation4 '>' operation4 { $$ = new_binop_node(BINOP_GT, $1, $3); }
            | operation5 { $$ = $1; }
            ;
 
-operation5 : operation5 '+' operation5 { AstNode node; ast_binop_init(&node, BINOP_ADD, $1, $3); $$ = &node; }
-           | operation5 '-' operation5 { AstNode node; ast_binop_init(&node, BINOP_SUB, $1, $3); $$ = &node; }
+operation5 : operation5 '+' operation5 { $$ = new_binop_node(BINOP_ADD, $1, $3); }
+           | operation5 '-' operation5 { $$ = new_binop_node(BINOP_SUB, $1, $3); }
            | operation6 { $$ = $1; }
            ;
 
-operation6 : operation6 '*' operation6 { AstNode node; ast_binop_init(&node, BINOP_MUL, $1, $3); $$ = &node; }
-           | operation6 '/' operation6 { AstNode node; ast_binop_init(&node, BINOP_DIV, $1, $3); $$ = &node; }
+operation6 : operation6 '*' operation6 { $$ = new_binop_node(BINOP_MUL, $1, $3); }
+           | operation6 '/' operation6 { $$ = new_binop_node(BINOP_DIV, $1, $3); }
            | operation7 { $$ = $1; }
            ;
 
-operation7 : '-' operation7 { AstNode node; ast_unop_init(&node, UNOP_NEG, $2); $$ = &node; }
-           | '!' operation7 { AstNode node; ast_unop_init(&node, UNOP_NOT, $2); $$ = &node; }
-           | NUM { AstNode node; ast_number_init(&node, atoi(tokenString)); $$ = &node; }
-           | ID { AstNode node; ast_ident_init(&node, tokenString); $$ = &node; }
+operation7 : '-' operation7 { $$ = new_unop_node(UNOP_NEG, $2); }
+           | '!' operation7 { $$ = new_unop_node(UNOP_NOT, $2); }
+           | NUM { $$ = new_number_node(atoi(tokenString)); }
+           | ID { $$ = new_ident_node(tokenString); }
            ;
 
 empty : /* empty */;
@@ -135,12 +135,14 @@ void yyerror(char *message) {
 int main() {
   Function f;
   function_init(&f, "main");
+  fn = &f;
 
   int yydebug = 1;
   
   yyparse();
 
-  printFunction(&f);
+  unsigned char chunk[1024];
+  compile(&f, chunk);
 
   return 0;
 }
