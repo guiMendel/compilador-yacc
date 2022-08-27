@@ -56,6 +56,10 @@ function_declaration : FUNCTION ID
                       {
                         Function *function = new_function("=(none)", fn());
                         declareVar($2, fn());
+
+                        /** know thyselves **/
+                        declareVar($2, function);
+
                         list_push(&fn()->kfunc, function);
                         list_push(&functions, function);
                       }

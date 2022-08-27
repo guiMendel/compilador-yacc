@@ -208,8 +208,6 @@ static void emitBinOp(AstNode *node) {
     emitNode(right);
     emitCompare(OP_JMPGT);
     break;
-  default:
-    break;
   }
 
   handlePop();
