@@ -26,7 +26,7 @@ Function *fn;
 
 %token <string> ID
 %token <number> NUM
-%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN WRITE READ
+%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ
 
 %type <node> statements statement declaration expression operation operation2 operation3 operation4 operation5 operation6 operation7
 %type <node> function.declaration function.call
@@ -71,8 +71,7 @@ statement : expression ';'
           | DO statements END { $$ = $2; }
           | RETURN ';' { $$ = new_return_node(NULL); }
           | RETURN expression ';' { $$ = new_return_node($2); }
-          | READ ID ';' { $$ = NULL; }
-          | WRITE expression ';' { $$ = NULL; }
+          | READ ID ';' { $$ = new_read_node($2, fn); }
           | ';' { $$ = NULL; }
           ;
 
@@ -82,7 +81,7 @@ declaration : VAR ID { declareVar($2, fn); $$ = NULL; }
 expression : '(' expression ')' { $$ = $2; }
            | ID '=' expression { $$ = new_assign_node($1, $3, fn); }
            | operation { $$ = $1; }
-           | function.call
+           | function.call { $$ = $1; }
            ;
 
 function.call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn); }
@@ -119,13 +118,13 @@ operation5 : operation5 '+' operation5 { $$ = new_binop_node(BINOP_ADD, $1, $3);
            | operation6 { $$ = $1; }
            ;
 
-operation6 : operation6 '*' operation6 { $$ = new_binop_node(BINOP_MUL, $1, $3); }
-           | operation6 '/' operation6 { $$ = new_binop_node(BINOP_DIV, $1, $3); }
+operation6 : expression '*' expression { $$ = new_binop_node(BINOP_MUL, $1, $3); }
+           | expression '/' expression { $$ = new_binop_node(BINOP_DIV, $1, $3); }
            | operation7 { $$ = $1; }
            ;
 
-operation7 : '-' operation7 { $$ = new_unop_node(UNOP_NEG, $2); }
-           | '!' operation7 { $$ = new_unop_node(UNOP_NOT, $2); }
+operation7 : '-' expression { $$ = new_unop_node(UNOP_NEG, $2); }
+           | '!' expression { $$ = new_unop_node(UNOP_NOT, $2); }
            | NUM { $$ = new_number_node($1); }
            | ID { $$ = new_ident_node($1, fn); }
            ;

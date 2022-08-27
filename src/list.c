@@ -3,13 +3,13 @@
 
 List* new_list() {
   List* l = malloc(sizeof(List));
-  l->head = NULL;
-  l->size = 0;
+  list_init(l);
   return l;
 }
 
 void list_init(List* l) {
   l->head = NULL;
+  l->tail = NULL;
   l->size = 0;
 }
 
@@ -18,6 +18,19 @@ void list_push(List* l, void* data) {
   n->data = data;
   n->next = l->head;
   l->head = n;
+  l->size++;
+}
+
+void list_append(List* l, void* data) {
+  list_node* n = malloc(sizeof(*n));
+  n->data = data;
+  n->next = NULL;
+  if (l->tail == NULL) {
+    l->head = n;
+  } else {
+    l->tail->next = n;
+  }
+  l->tail = n;
   l->size++;
 }
 

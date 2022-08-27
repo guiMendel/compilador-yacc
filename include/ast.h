@@ -33,6 +33,7 @@ typedef enum {
   AST_IF,
   AST_WHILE,
   AST_CALL,
+  AST_READ,
 } NodeType;
 
 typedef struct AstNode {
@@ -85,6 +86,10 @@ typedef struct AstNode {
       int index;
       List *args;
     } as_call;
+
+    struct {
+      int index;
+    } as_read;
   };
 } AstNode;
 
@@ -113,6 +118,7 @@ AstNode *new_while_node(AstNode *cond, AstNode *body);
 AstNode *new_ident_node(char *name, Function *fn);
 AstNode *new_assign_node(char *name, AstNode *expr, Function *fn);
 AstNode *new_call_node(char *name, List *args, Function *fn);
+AstNode *new_read_node(char *name, Function *fn);
 
 void declareVar(char *name, Function *fn);
 

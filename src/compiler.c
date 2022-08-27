@@ -233,6 +233,17 @@ static void emitNode(AstNode *node) {
   case AST_BINOP:
     emitBinOp(node);
     break;
+  case AST_UNOP:
+    emitNode(node->as_unop.expr);
+    switch (node->as_unop.op) {
+    case UNOP_NEG:
+      emitLong(OP_MINUS);
+      break;
+    case UNOP_NOT:
+      emitLong(OP_NOT);
+      break;
+    }
+    break;
   case AST_ASSIGN:
     emitNode(node->as_assign.expr);
     emitLong(CREATE_U(OP_SETGLOBAL, node->as_assign.index));
@@ -277,12 +288,21 @@ static void emitNode(AstNode *node) {
     emitLong(CREATE_U(OP_GETGLOBAL, node->as_call.index));
     int _depth = depth;
 
-    depth++;
+    handlePush();
     emitNodeList(node->as_call.args);
 
     emitLong(CREATE_AB(OP_CALL, _depth, 1));
 
-    depth--;
+    handlePop();
+    break;
+  case AST_READ:
+    // TODO: this should not be hardcoded
+    emitLong(CREATE_U(OP_GETGLOBAL, 1));
+    emitLong(CREATE_U(OP_PUSHSTRING, 2));
+
+    emitLong(CREATE_AB(OP_CALL, depth, 1));
+
+    emitLong(CREATE_U(OP_SETGLOBAL, node->as_read.index));
     break;
   }
 }

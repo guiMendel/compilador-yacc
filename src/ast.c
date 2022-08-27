@@ -77,7 +77,7 @@ static int findGlobal(char *name, Function *fn) {
 }
 
 void declareVar(char *name, Function *fn) {
-  list_push(&fn->kstr, name);
+  list_append(&fn->kstr, name);
 }
 
 AstNode *new_ident_node(char *name, Function *fn) {
@@ -103,6 +103,13 @@ AstNode *new_call_node(char *name, List* args, Function *fn) {
   return node;
 }
 
+AstNode *new_read_node(char *name, Function *fn) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_READ;
+  node->as_read.index = findGlobal(name, fn);
+  return node;
+}
+
 void function_init(Function *f, char *source_name) {
   f->source_name = source_name;
   f->line_defined = 0;
@@ -117,7 +124,7 @@ void function_init(Function *f, char *source_name) {
   /*
    * Add library functions to the function's constant table.
    */
-  list_push(&f->kstr, "print");
-  list_push(&f->kstr, "read");
-  list_push(&f->kstr, "*n");
+  list_append(&f->kstr, "print");
+  list_append(&f->kstr, "read");
+  list_append(&f->kstr, "*n");
 }

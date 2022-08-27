@@ -8,11 +8,13 @@ typedef struct list_node {
 
 typedef struct {
   list_node* head;
+  list_node* tail;
   int size;
 } List;
 
 void list_init(List* l);
 void list_push(List* l, void* data);
+void list_append(List* l, void* data);
 void* list_top(List* l);
 void* list_pop(List* l);
 void* list_get(List* l, int index);

@@ -23,7 +23,6 @@
 "end"                                   { return TOKEN(END); }
 "function"                              { return TOKEN(FUNCTION); }
 "return"                                { return TOKEN(RETURN); }
-"write"                                 { return TOKEN(WRITE); }
 "read"                                  { return TOKEN(READ); }
 
 "=="                                    { return TOKEN(EQUALS); }
