@@ -103,7 +103,7 @@ typedef struct {
   list knum;
   list kfunc;
 
-  AstNode code; // pointer to a block node
+  AstNode *code; // pointer to a block node
 } Function;
 
 void function_init(Function *f, char *source_name);

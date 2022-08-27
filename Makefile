@@ -10,14 +10,14 @@ LEX     = flex
 YACC    = bison -y
 YFLAGS  = -d
 
-SRCS 		= $(SRC)/ast.c $(SRC)/compiler.c $(SRC)/list.c
+SRCS 		= $(SRC)/ast.c $(SRC)/compiler.c $(SRC)/list.c $(SRC)/printer.c
 OBJS 		= $(patsubst $(SRC)/%.c, $(OUTPUT)/%.o, $(SRCS))
 
 TESTSRCS = $(wildcard $(TEST)/*.c)
 TESTOBJS = $(patsubst $(TEST)/%.c, $(OUTPUT)/%.o, $(TESTSRCS))
 
 all: $(OUTPUT)/y.tab.c $(OUTPUT)/lex.yy.c $(OBJS)
-	$(CC) $(CFLAGS) -o $(OUTPUT)/compiler $(OUTPUT)/y.tab.c $(OUTPUT)/lex.yy.c $(OBJS)
+	$(CC) $(CFLAGS) -o $(OUTPUT)/compiler $(OUTPUT)/y.tab.c $(OUTPUT)/lex.yy.c $(OBJS) -I$(INCLUDE)
 
 $(OUTPUT)/y.tab.c: $(SRC)/parser.y
 	$(YACC) $(YFLAGS) -o $(OUTPUT)/y.tab.c $(SRC)/parser.y

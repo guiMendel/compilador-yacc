@@ -1,7 +1,13 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "y.tab.h" // generated via yacc -d
+
+#include "scanner.h"
+
+char tokenString[MAXTOKENLEN+1];
+#define SAVE_TOKEN strncpy(tokenString, yytext, yyleng); tokenString[yyleng] = '\0';
 %}
 
 %option noyywrap
@@ -23,8 +29,8 @@
 "||"                                    { return OR; }
 "&&"                                    { return AND; }
 
-[0-9]+(\.[0-9]+)?([eE][0-9]+)?          { return NUM; }
-[a-z|A-Z]([a-z|A-Z]|[[:digit:]]|_)*     { return ID; }
+[0-9]+(\.[0-9]+)?([eE][0-9]+)?          { SAVE_TOKEN; return NUM; }
+[a-z|A-Z]([a-z|A-Z]|[[:digit:]]|_)*     { SAVE_TOKEN; return ID; }
 [;,!-*/+-><=&|\(\)]                     { return yytext[0]; }
 [ \t\f\v\n]                             { ; }
 #.*\n                                   { ; }

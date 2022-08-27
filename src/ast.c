@@ -66,5 +66,5 @@ void function_init(Function *f, char *source_name) {
   list_init(&f->knum);
   list_init(&f->kfunc);
 
-  ast_block_init(&f->code);
+  /* ast_block_init(&f->code); */
 }
