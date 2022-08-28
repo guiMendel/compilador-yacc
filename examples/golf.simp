@@ -1,5 +1,2 @@
-function f(n) 
-  return (n < 1) || f(n-1) * n;
-end 
-
-print(f(5));
+function f(n)return n<1or f(n-1)*n;end 
+print(f(7));

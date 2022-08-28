@@ -61,15 +61,24 @@ AstNode *new_while_node(AstNode *cond, AstNode *body) {
 }
 
 static int findGlobal(char *name, Function *fn) {
-  list_node *n = fn->kstr.head;
-  int i = 0;
+  Function *cur = fn;
 
-  while (n != NULL) {
-    if (strcmp(name, (char *)n->data) == 0) {
-      return i;
+  while (cur != NULL) {
+    list_node *n = cur->kstr.head;
+    int i = 0;
+
+    while (n != NULL) {
+      if (strcmp(name, (char *)n->data) == 0) {
+        if (cur == fn)
+          return i;
+        else
+          return declareVar(name, fn);
+      }
+      n = n->next;
+      i++;
     }
-    n = n->next;
-    i++;
+
+    cur = cur->parent;
   }
 
   return -1;
@@ -90,8 +99,9 @@ static int findLocal(char *name, Function *fn) {
   return -1;
 }
 
-void declareVar(char *name, Function *fn) {
-  list_append(&fn->kstr, name);
+int declareVar(char *name, Function *fn) { 
+  list_append(&fn->kstr, name); 
+  return fn->kstr.size - 1;
 }
 
 AstNode *new_ident_node(char *name, Function *fn) {
@@ -139,7 +149,7 @@ AstNode *new_assign_node(char *name, AstNode *expr, Function *fn) {
   return node;
 }
 
-AstNode *new_call_node(char *name, List* args, Function *fn) {
+AstNode *new_call_node(char *name, List *args, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_CALL;
   node->as_call.index = findGlobal(name, fn);
@@ -158,17 +168,26 @@ AstNode *new_function_node(char *name, List *args, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_FUNCTION;
 
-  node->as_function.fn_index = 0;
-
-  // attempt find fn in parent
-  list_node *n = fn->kfunc.head;
-  while (n != NULL && n->data != fn) {
-    n = n->next;
-    node->as_function.fn_index++;
-  }
+  // FIXME: this may not work for nested functions
+  node->as_function.fn_index = fn->parent->kfunc.size - 1;
 
   node->as_function.name_index = findGlobal(name, fn->parent);
   node->as_function.args = args;
+  return node;
+}
+
+AstNode *new_array_node(List *args) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_ARRAY;
+  node->as_array.args = args;
+  return node;
+}
+
+AstNode *new_array_access_node(AstNode *array, AstNode *index) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_ARRAY_ACCESS;
+  node->as_array_access.array = array;
+  node->as_array_access.index = index;
   return node;
 }
 
@@ -191,6 +210,7 @@ void function_init(Function *f, char *source_name) {
   list_append(&f->kstr, "print");
   list_append(&f->kstr, "read");
   list_append(&f->kstr, "*n");
+  list_append(&f->kstr, "getn");
 }
 
 Function *new_function(char *source_name, Function *parent) {

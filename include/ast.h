@@ -35,6 +35,9 @@ typedef enum {
   AST_CALL,
   AST_READ,
   AST_FUNCTION,
+
+  AST_ARRAY,
+  AST_ARRAY_ACCESS,
 } NodeType;
 
 typedef struct AstNode {
@@ -99,6 +102,15 @@ typedef struct AstNode {
       int fn_index;
       List *args;
     } as_function;
+
+    struct {
+      List *args;
+    } as_array;
+
+    struct {
+      struct AstNode *array;
+      struct AstNode *index;
+    } as_array_access;
   };
 } AstNode;
 
@@ -139,7 +151,10 @@ AstNode *new_read_node(char *name, Function *fn);
 
 AstNode *new_function_node(char *name, List *params, Function *fn);
 
-void declareVar(char *name, Function *fn);
+AstNode *new_array_node(List *args);
+AstNode *new_array_access_node(AstNode *array, AstNode *index);
+
+int declareVar(char *name, Function *fn);
 
 void function_init(Function *f, char *source_name);
 Function *new_function(char *source_name, Function *parent);

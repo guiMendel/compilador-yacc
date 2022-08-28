@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -Wall -g
+CFLAGS  = -Wall -g -fno-stack-protector
 
 INCLUDES = include lua4/include
 INCLUDE = $(addprefix -I,$(INCLUDES))

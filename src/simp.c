@@ -15,6 +15,12 @@ int main(int argc, char *argv[]) {
 
   if (strcmp(argv[1], "-o") == 0) {
     outfile = fopen(argv[2], "w");
+
+    if (outfile == NULL) {
+      fprintf(stderr, "Could not open output file %s", argv[2]);
+      return 1;
+    }
+
     argv += 2;
   }
 
@@ -27,7 +33,7 @@ int main(int argc, char *argv[]) {
 
   Function *f = parse(infile);
 
-  char chunk[1024];
+  char chunk[4096];
   int size = compile(f, chunk);
 
   if (outfile != NULL) {

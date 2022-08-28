@@ -29,12 +29,12 @@
 
 "=="                                    { return TOKEN(EQUALS); }
 "!="                                    { return TOKEN(NOT_EQUALS); }
-"||"                                    { return TOKEN(OR); }
-"&&"                                    { return TOKEN(AND); }
+"or"                                    { return TOKEN(OR); }
+"and"                                    { return TOKEN(AND); }
 
 [0-9]+(\.[0-9]+)?([eE][0-9]+)?          { yylval.number = atoi(yytext); return NUM; }
 [a-z|A-Z]([a-z|A-Z]|[[:digit:]]|_)*     { yylval.string = strdup(yytext); return ID; }
-[;,!-*/+-><=&|\(\)]                     { return TOKEN(yytext[0]); }
+[;,!-*/+-><=&|\(\)\[\]]                     { return TOKEN(yytext[0]); }
 [ \t\f\v\n]                             { ; }
 #.*\n                                   { ; }
 %%

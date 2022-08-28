@@ -55,6 +55,15 @@ static void emitString(const char *string) {
   }
 }
 
+/*
+ * For debugging purposes
+ */
+static void emitLocal(const char *string) {
+  emitString(string);
+  emit(0);
+  emit(100);
+}
+
 static void emitList(List *l, void (*f)(void *)) {
   emit(l->size);
   list_node *n = l->head;
@@ -128,7 +137,8 @@ static void emitFunction(Function *f) {
 
   int stackOffset = emitDummy(sizeof(int)); // max_stack
 
-  emit(0); // locals debug
+  /* emit(0); // locals debug */
+  emitList(&f->params, (void (*)(void *))emitLocal);
   emit(0); // lines debug
 
   emitList(&f->kstr, (void (*)(void *))emitString);
@@ -172,22 +182,20 @@ static void emitBinOp(AstNode *node) {
   case BINOP_ADD:
     if (right->type == AST_NUMBER) {
       emitLong(CREATE_S(OP_ADDI, right->as_number.value));
-      handlePush();
     } else {
       emitNode(right);
       emitLong(OP_ADD);
+      handlePop();
     }
-    handlePop();
     break;
   case BINOP_SUB:
     if (node->as_binop.right->type == AST_NUMBER) {
       emitLong(CREATE_S(OP_ADDI, -right->as_number.value));
-      handlePush();
     } else {
       emitNode(right);
       emitLong(OP_SUB);
+      handlePop();
     }
-    handlePop();
     break;
   case BINOP_MUL:
     emitNode(right);
@@ -264,6 +272,7 @@ static void emitNode(AstNode *node) {
       emitLong(OP_NOT);
       break;
     }
+    handlePop();
     break;
   case AST_ASSIGN:
     emitNode(node->as_assign.expr);
@@ -297,14 +306,39 @@ static void emitNode(AstNode *node) {
   case AST_WHILE:;
     int startOffset = position;
 
-    emitNode(node->as_while.cond);
-    handlePop();
+    AstNode* cond = node->as_while.cond;
+    OpCode opcode = OP_JMPF;
+    if (cond->type == AST_BINOP && cond->as_binop.op >= BINOP_EQ && cond->as_binop.op <= BINOP_GT) {
+      emitNode(cond->as_binop.left);
+      emitNode(cond->as_binop.right);
+      switch (cond->as_binop.op) {
+      case BINOP_EQ:
+        opcode = OP_JMPNE;
+        break;
+      case BINOP_NEQ:
+        opcode = OP_JMPEQ;
+        break;
+      case BINOP_LT:
+        opcode = OP_JMPGE;
+        break;
+      case BINOP_GT:
+        opcode = OP_JMPLE;
+        break;
+      default:
+        break;
+      }
+      handlePop();
+    } else {
+      emitNode(cond);
+    }
 
     int endOffset = emitDummy(sizeof(Instruction));
+    handlePop();
+
     emitNode(node->as_while.body);
 
     emitLong(CREATE_S(OP_JMP, (startOffset - position) / 8 - 1));
-    patchJump(endOffset, OP_JMPF);
+    patchJump(endOffset, opcode);
     break;
   case AST_CALL:
     // fetch function name
@@ -316,7 +350,13 @@ static void emitNode(AstNode *node) {
 
     emitLong(CREATE_AB(OP_CALL, _depth, 1));
 
-    handlePop();
+    depth = _depth + 1;
+
+    // hack to handle print as it does not return a value
+    if (node->as_call.index == 0) {
+      handlePop();
+    }
+
     break;
   case AST_READ:
     // TODO: this should not be hardcoded
@@ -330,6 +370,19 @@ static void emitNode(AstNode *node) {
   case AST_FUNCTION:
     emitLong(CREATE_AB(OP_CLOSURE, node->as_function.fn_index, 0));
     emitLong(CREATE_U(OP_SETGLOBAL, node->as_function.name_index));
+    break;
+  case AST_ARRAY:
+    emitLong(CREATE_U(OP_CREATETABLE, node->as_array.args->size));
+    handlePush();
+    emitNodeList(node->as_array.args);
+    emitLong(CREATE_AB(OP_SETLIST, 0, node->as_array.args->size));
+    depth -= node->as_array.args->size;
+    break;
+  case AST_ARRAY_ACCESS:
+    emitNode(node->as_array_access.array);
+    emitNode(node->as_array_access.index);
+    emitLong(OP_GETTABLE);
+    handlePop();
     break;
   }
 }

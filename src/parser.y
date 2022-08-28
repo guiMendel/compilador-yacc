@@ -61,7 +61,7 @@ function_declaration : FUNCTION ID
                         /** know thyselves **/
                         declareVar($2, function);
 
-                        list_push(&fn()->kfunc, function);
+                        list_append(&fn()->kfunc, function);
                         list_push(&functions, function);
                       }
                      '(' parameters ')' statements END 
@@ -92,6 +92,7 @@ statement : expression ';'
           ;
 
 declaration : VAR ID { declareVar($2, fn()); $$ = NULL; }
+            | VAR ID '=' expression { declareVar($2, fn()); $$ = new_assign_node($2, $4, fn()); }
             ;
 
 expression : '(' expression ')' { $$ = $2; }
@@ -109,6 +110,9 @@ expression : '(' expression ')' { $$ = $2; }
            | expression '/' expression { $$ = new_binop_node(BINOP_DIV, $1, $3); }
            | '-' expression { $$ = new_unop_node(UNOP_NEG, $2); }
            | '!' expression { $$ = new_unop_node(UNOP_NOT, $2); }
+           | '[' arguments ']' { $$ = new_array_node($2); }
+           | expression '[' expression ']' { $$ = new_array_access_node($1, $3); }
+           // TODO: allow call()[index] syntax
            | NUM { $$ = new_number_node($1); }
            | ID { $$ = new_ident_node($1, fn()); }
            ;
