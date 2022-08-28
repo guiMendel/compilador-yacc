@@ -24,10 +24,13 @@
 "do"                                    { return TOKEN(DO); }
 "end"                                   { return TOKEN(END); }
 "for"                                   { return TOKEN(FOR); }
+"each"                                   { return TOKEN(EACH); }
 "in"                                    { return TOKEN(IN); }
 "function"                              { return TOKEN(FUNCTION); }
 "return"                                { return TOKEN(RETURN); }
 "read"                                  { return TOKEN(READ); }
+
+"\.\."                                  { return TOKEN(RANGE); }
 
 "=="                                    { return TOKEN(EQUALS); }
 "!="                                    { return TOKEN(NOT_EQUALS); }

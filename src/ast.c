@@ -201,12 +201,52 @@ AstNode *new_array_access_node(AstNode *array, AstNode *index) {
   return node;
 }
 
+AstNode *new_array_assign_node(char* name, AstNode *index, AstNode *expr, Function *fn) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_ARRAY_ASSIGN;
+
+  node->as_array_assign.is_local = 0;
+
+  int array_index = findLocal(name, fn);
+  if (array_index == -1) {
+    array_index = findGlobal(name, fn);
+    if (array_index == -1) {
+      printf("Error: Unknown variable %s\n", name);
+      exit(1);
+    }
+  } else {
+    node->as_array_assign.is_local = 1;
+  }
+
+  node->as_array_assign.array_index = array_index;
+  node->as_array_assign.index = index;
+  node->as_array_assign.expr = expr;
+  return node;
+}
+
 AstNode *new_each_node(char *ident, AstNode *expr, AstNode *body, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_EACH;
 
   node->as_each.expr = expr;
   node->as_each.body = body;
+
+  // TODO: we should be able to remove ident (and index/table) from locals now
+
+  return node;
+}
+
+AstNode *new_for_node(char *ident, AstNode *init, AstNode *limit, AstNode *body) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_FOR;
+
+  node->as_for.init = init;
+  node->as_for.limit = limit;
+  node->as_for.step = new_number_node(1);
+  node->as_for.body = body;
+
+  // TODO: we should be able to remove ident (and limit/step) from locals now
+
   return node;
 }
 

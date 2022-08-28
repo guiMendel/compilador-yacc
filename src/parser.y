@@ -28,7 +28,7 @@ static List functions;
 
 %token <string> ID
 %token <number> NUM
-%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ FOR IN
+%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ FOR EACH IN RANGE
 
 %type <node> statements statement declaration expression function_declaration function_call
 %type <list> parameters more_parameters arguments more_arguments
@@ -81,11 +81,27 @@ more_parameters : empty { $$ = &fn()->params; }
 
 statement : expression ';'
           | declaration ';'
+          | ID '=' expression { $$ = new_assign_node($1, $3, fn()); }
+          | ID '[' expression ']' '=' expression { $$ = new_array_assign_node($1, $3, $6, fn()); }
           | IF '(' expression ')' statement                   %prec THEN { $$ = new_if_node($3, $5, NULL); }
           | IF '(' expression ')' statement ELSE statement   { $$ = new_if_node($3, $5, $7); }
           | WHILE '(' expression ')' statement { $$ = new_while_node($3, $5); }
-          | FOR ID IN { list_push(&fn()->locals, $2); list_push(&fn()->locals, ""); list_push(&fn()->locals, ""); } 
-            expression DO statements END { $$ = new_each_node($2, $5, $7, fn()); }
+          | EACH ID IN 
+            { 
+              list_push(&fn()->locals, $2); // binding variable
+              list_push(&fn()->locals, ""); // the index variable (not used)
+              list_push(&fn()->locals, ""); // the table variable (not used)
+            } 
+            expression DO statements END 
+            { 
+              $$ = new_each_node($2, $5, $7, fn());
+            }
+          | FOR ID IN 
+            { 
+              list_push(&fn()->locals, ""); // the step variable (not used)
+              list_push(&fn()->locals, ""); // the limit variable (not used)
+              list_push(&fn()->locals, $2); // binding variable
+            } expression RANGE expression DO statements END { $$ = new_for_node($2, $5, $7, $9); }
           | DO statements END { $$ = $2; }
           | RETURN ';' { $$ = new_return_node(NULL); }
           | RETURN expression ';' { $$ = new_return_node($2); }
@@ -98,7 +114,6 @@ declaration : VAR ID { declareVar($2, fn()); $$ = NULL; }
             ;
 
 expression : '(' expression ')' { $$ = $2; }
-           | ID '=' expression { $$ = new_assign_node($1, $3, fn()); }
            | function_call { $$ = $1; }
            | expression OR expression { $$ = new_binop_node(BINOP_OR, $1, $3); }
            | expression AND expression { $$ = new_binop_node(BINOP_AND, $1, $3); }

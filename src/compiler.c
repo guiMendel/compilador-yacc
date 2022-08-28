@@ -388,14 +388,33 @@ static void emitNode(AstNode *node) {
     emitLong(OP_GETTABLE);
     handlePop();
     break;
+  case AST_ARRAY_ASSIGN:
+    emitLong(CREATE_U(node->as_array_assign.is_local ? OP_GETLOCAL : OP_GETGLOBAL,
+                      node->as_array_assign.array_index));
+    emitNode(node->as_array_assign.index);
+    emitNode(node->as_array_assign.expr);
+    emitLong(CREATE_AB(OP_SETTABLE, 3, 3));
+    handlePop();
+    handlePop();
+    break;
   case AST_EACH: {
     emitNode(node->as_each.expr);
     int startOffset = emitDummy(sizeof(Instruction));
     depth += 2; // for loop has 2 variables (index, value)
     emitNode(node->as_each.body);
-    int diff = (startOffset - position) / 8;
-    emitLong(CREATE_S(OP_LFORLOOP, diff));
+    emitLong(CREATE_S(OP_LFORLOOP, (startOffset - position) / 8));
     patchJump(startOffset, OP_LFORPREP);
+    depth -= 3;
+    break;
+  }
+  case AST_FOR: {
+    emitNode(node->as_for.init);
+    emitNode(node->as_for.limit);
+    emitNode(node->as_for.step);
+    int startOffset = emitDummy(sizeof(Instruction));
+    emitNode(node->as_for.body);
+    emitLong(CREATE_S(OP_FORLOOP, (startOffset - position) / 8));
+    patchJump(startOffset, OP_FORPREP);
     depth -= 3;
     break;
   }

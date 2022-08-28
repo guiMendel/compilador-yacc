@@ -38,6 +38,7 @@ typedef enum {
 
   AST_ARRAY,
   AST_ARRAY_ACCESS,
+  AST_ARRAY_ASSIGN,
 
   AST_EACH,
   AST_FOR,
@@ -116,9 +117,23 @@ typedef struct AstNode {
     } as_array_access;
 
     struct {
+      int array_index;
+      struct AstNode *index;
+      struct AstNode *expr;
+      int is_local;
+    } as_array_assign;
+
+    struct {
       struct AstNode *expr;
       struct AstNode *body;
     } as_each;
+
+    struct {
+      struct AstNode *init;
+      struct AstNode *limit;
+      struct AstNode *step;
+      struct AstNode *body;
+    } as_for;
   };
 } AstNode;
 
@@ -162,8 +177,10 @@ AstNode *new_function_node(char *name, List *params, Function *fn);
 
 AstNode *new_array_node(List *args);
 AstNode *new_array_access_node(AstNode *array, AstNode *index);
+AstNode *new_array_assign_node(char* name, AstNode *index, AstNode *expr, Function *fn);
 
 AstNode *new_each_node(char *ident, AstNode *expr, AstNode *body, Function *fn);
+AstNode *new_for_node(char *ident, AstNode *init, AstNode *limit, AstNode *body);
 
 int declareVar(char *name, Function *fn);
 
