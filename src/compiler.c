@@ -303,12 +303,13 @@ static void emitNode(AstNode *node) {
     }
 
     break;
-  case AST_WHILE:;
+  case AST_WHILE: {
     int startOffset = position;
 
-    AstNode* cond = node->as_while.cond;
+    AstNode *cond = node->as_while.cond;
     OpCode opcode = OP_JMPF;
-    if (cond->type == AST_BINOP && cond->as_binop.op >= BINOP_EQ && cond->as_binop.op <= BINOP_GT) {
+    if (cond->type == AST_BINOP && cond->as_binop.op >= BINOP_EQ &&
+        cond->as_binop.op <= BINOP_GT) {
       emitNode(cond->as_binop.left);
       emitNode(cond->as_binop.right);
       switch (cond->as_binop.op) {
@@ -340,6 +341,7 @@ static void emitNode(AstNode *node) {
     emitLong(CREATE_S(OP_JMP, (startOffset - position) / 8 - 1));
     patchJump(endOffset, opcode);
     break;
+  }
   case AST_CALL:
     // fetch function name
     emitLong(CREATE_U(OP_GETGLOBAL, node->as_call.index));
@@ -348,12 +350,14 @@ static void emitNode(AstNode *node) {
     handlePush();
     emitNodeList(node->as_call.args);
 
-    emitLong(CREATE_AB(OP_CALL, _depth, 1));
+    int is_print = node->as_call.index == 0;
+
+    emitLong(CREATE_AB(OP_CALL, _depth, is_print ? 0 : 1));
 
     depth = _depth + 1;
 
     // hack to handle print as it does not return a value
-    if (node->as_call.index == 0) {
+    if (is_print) {
       handlePop();
     }
 
@@ -384,6 +388,17 @@ static void emitNode(AstNode *node) {
     emitLong(OP_GETTABLE);
     handlePop();
     break;
+  case AST_EACH: {
+    emitNode(node->as_each.expr);
+    int startOffset = emitDummy(sizeof(Instruction));
+    depth += 2; // for loop has 2 variables (index, value)
+    emitNode(node->as_each.body);
+    int diff = (startOffset - position) / 8;
+    emitLong(CREATE_S(OP_LFORLOOP, diff));
+    patchJump(startOffset, OP_LFORPREP);
+    depth -= 3;
+    break;
+  }
   }
 }
 

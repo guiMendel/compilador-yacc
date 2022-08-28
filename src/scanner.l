@@ -23,6 +23,8 @@
 "while"                                 { return TOKEN(WHILE); }
 "do"                                    { return TOKEN(DO); }
 "end"                                   { return TOKEN(END); }
+"for"                                   { return TOKEN(FOR); }
+"in"                                    { return TOKEN(IN); }
 "function"                              { return TOKEN(FUNCTION); }
 "return"                                { return TOKEN(RETURN); }
 "read"                                  { return TOKEN(READ); }

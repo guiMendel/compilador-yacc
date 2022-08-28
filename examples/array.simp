@@ -3,14 +3,11 @@ function cross(a, b)
 end
 
 function area(points)
-  var size = getn(points);
   var s = 0;
-  var i = 1;
-  var last = points[size];
-  while (i < size + 1) do
-    s = s + cross(points[i], last);
-    last = points[i];
-    i = i + 1;
+  var last = points[getn(points)];
+  for point in points do
+    s = s + cross(last, point);
+    last = point;
   end
   return s / 2;
 end

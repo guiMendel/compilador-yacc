@@ -85,9 +85,19 @@ static int findGlobal(char *name, Function *fn) {
 }
 
 static int findLocal(char *name, Function *fn) {
-  list_node *n = fn->params.head;
   int i = 0;
+  list_node *n;
 
+  n = fn->params.head;
+  while (n != NULL) {
+    if (strcmp(name, (char *)n->data) == 0) {
+      return i;
+    }
+    n = n->next;
+    i++;
+  }
+
+  n = fn->locals.head;
   while (n != NULL) {
     if (strcmp(name, (char *)n->data) == 0) {
       return i;
@@ -99,8 +109,8 @@ static int findLocal(char *name, Function *fn) {
   return -1;
 }
 
-int declareVar(char *name, Function *fn) { 
-  list_append(&fn->kstr, name); 
+int declareVar(char *name, Function *fn) {
+  list_append(&fn->kstr, name);
   return fn->kstr.size - 1;
 }
 
@@ -191,6 +201,15 @@ AstNode *new_array_access_node(AstNode *array, AstNode *index) {
   return node;
 }
 
+AstNode *new_each_node(char *ident, AstNode *expr, AstNode *body, Function *fn) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_EACH;
+
+  node->as_each.expr = expr;
+  node->as_each.body = body;
+  return node;
+}
+
 void function_init(Function *f, char *source_name) {
   f->source_name = source_name;
   f->line_defined = 0;
@@ -198,6 +217,7 @@ void function_init(Function *f, char *source_name) {
   f->is_vararg = 0;
   f->max_stack = 0;
 
+  list_init(&f->locals);
   list_init(&f->params);
 
   list_init(&f->kstr);

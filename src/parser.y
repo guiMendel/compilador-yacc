@@ -28,7 +28,7 @@ static List functions;
 
 %token <string> ID
 %token <number> NUM
-%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ
+%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ FOR IN
 
 %type <node> statements statement declaration expression function_declaration function_call
 %type <list> parameters more_parameters arguments more_arguments
@@ -84,6 +84,8 @@ statement : expression ';'
           | IF '(' expression ')' statement                   %prec THEN { $$ = new_if_node($3, $5, NULL); }
           | IF '(' expression ')' statement ELSE statement   { $$ = new_if_node($3, $5, $7); }
           | WHILE '(' expression ')' statement { $$ = new_while_node($3, $5); }
+          | FOR ID IN { list_push(&fn()->locals, $2); list_push(&fn()->locals, ""); list_push(&fn()->locals, ""); } 
+            expression DO statements END { $$ = new_each_node($2, $5, $7, fn()); }
           | DO statements END { $$ = $2; }
           | RETURN ';' { $$ = new_return_node(NULL); }
           | RETURN expression ';' { $$ = new_return_node($2); }
