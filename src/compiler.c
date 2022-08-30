@@ -16,9 +16,9 @@ static List functions;
 /*
  * This is used to keep track of the number of values on the stack.
  *
- * This may not be the best aproach, as branches "branch" the stack. The
- * alternative is to pass the depth as a parameter to the functions that emit
- * code.
+ * As depth is only used for call/return, a better aproach would be to
+ * query the number of paramenteres of the function being called, and add that to
+ * the number of arguments of the callee (always on the stack).
  **/
 int depth;
 
