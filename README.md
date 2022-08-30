@@ -1,14 +1,22 @@
 # Linguagem Simp
 
-# Lua Header
+## Instruções para building
 
-0000   SS SS SS SS VV EN SI SL IS IW OW BW DS PI PI PI  .Lua@.... .....[
-0010   PI PI PI PI PI ss ss ss ss ss ss ss ss Na Na Na  ....A........=(n
-0020   Na Na Na Na Na LD LD LD LD NP NP NP NP VA MS MS  one)............
-0030   MS MS DB DB DB DB DB DB DB DB KS KS KS KS KN KN  ................
-0040   KN KN KF KF KF KF CS CS CS CS
+1. Instale as dependências do parser (bison e flex)
+2. Baixe e faça build da versão 4 da linguagem lua
 
-## Legenda
+```bash
+curl -R -O http://www.lua.org/ftp/lua-4.0.1.tar.gz
+tar zxf lua-4.0.1.tar.gz
+mv lua-4.0.1 lua
+cd lua
+make all
+```
+
+3. make
+
+O executável será gerado em `output/simp`
+
+## Uso
 
 TODO
-

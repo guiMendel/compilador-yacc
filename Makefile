@@ -1,12 +1,12 @@
 CC      = gcc
 CFLAGS  = -Wall -g
 
-INCLUDES = include lua4/include
+INCLUDES = include lua/include
 INCLUDE = $(addprefix -I,$(INCLUDES))
 OUTPUT = output
 SRC = src
-LIBS = -l:liblua4.a -l:liblualib4.a -lm
-LIBDIR = lua4/lib/Linux24g3_64
+LIBS = -l:liblua.a -l:liblualib.a -lm
+LIBDIR = lua/lib
 
 LEX     = flex
 YACC    = bison -y -t
