@@ -90,9 +90,7 @@ static int findLocal(char *name, Function *fn) {
   return -1;
 }
 
-void declareVar(char *name, Function *fn) {
-  list_append(&fn->kstr, name);
-}
+void declareVar(char *name, Function *fn) { list_append(&fn->kstr, name); }
 
 AstNode *new_ident_node(char *name, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
@@ -139,7 +137,7 @@ AstNode *new_assign_node(char *name, AstNode *expr, Function *fn) {
   return node;
 }
 
-AstNode *new_call_node(char *name, List* args, Function *fn) {
+AstNode *new_call_node(char *name, List *args, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_CALL;
   node->as_call.index = findGlobal(name, fn);
@@ -158,14 +156,8 @@ AstNode *new_function_node(char *name, List *args, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_FUNCTION;
 
-  node->as_function.fn_index = 0;
-
-  // attempt find fn in parent
-  list_node *n = fn->kfunc.head;
-  while (n != NULL && n->data != fn) {
-    n = n->next;
-    node->as_function.fn_index++;
-  }
+  // FIXME: this may not work for nested functions
+  node->as_function.fn_index = fn->parent->kfunc.size - 1;
 
   node->as_function.name_index = findGlobal(name, fn->parent);
   node->as_function.args = args;

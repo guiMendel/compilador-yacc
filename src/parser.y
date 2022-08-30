@@ -61,7 +61,7 @@ function_declaration : FUNCTION ID
                         /** know thyselves **/
                         declareVar($2, function);
 
-                        list_push(&fn()->kfunc, function);
+                        list_append(&fn()->kfunc, function);
                         list_push(&functions, function);
                       }
                      '(' parameters ')' statements END 
@@ -92,6 +92,7 @@ statement : expression ';'
           ;
 
 declaration : VAR ID { declareVar($2, fn()); $$ = NULL; }
+            | VAR ID '=' expression { declareVar($2, fn()); $$ = new_assign_node($2, $4, fn()); }
             ;
 
 expression : '(' expression ')' { $$ = $2; }

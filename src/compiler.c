@@ -55,6 +55,12 @@ static void emitString(const char *string) {
   }
 }
 
+static void emitLocal(const char *string) {
+  emitString(string);
+  emit(0);    // init pc
+  emit(0xff); // last pc
+}
+
 static void emitList(List *l, void (*f)(void *)) {
   emit(l->size);
   list_node *n = l->head;
@@ -128,7 +134,7 @@ static void emitFunction(Function *f) {
 
   int stackOffset = emitDummy(sizeof(int)); // max_stack
 
-  emit(0); // locals debug
+  emitList(&f->params, (void (*)(void *))emitLocal);
   emit(0); // lines debug
 
   emitList(&f->kstr, (void (*)(void *))emitString);
@@ -172,22 +178,20 @@ static void emitBinOp(AstNode *node) {
   case BINOP_ADD:
     if (right->type == AST_NUMBER) {
       emitLong(CREATE_S(OP_ADDI, right->as_number.value));
-      handlePush();
     } else {
       emitNode(right);
       emitLong(OP_ADD);
+      handlePop();
     }
-    handlePop();
     break;
   case BINOP_SUB:
     if (node->as_binop.right->type == AST_NUMBER) {
       emitLong(CREATE_S(OP_ADDI, -right->as_number.value));
-      handlePush();
     } else {
       emitNode(right);
       emitLong(OP_SUB);
+      handlePop();
     }
-    handlePop();
     break;
   case BINOP_MUL:
     emitNode(right);
@@ -264,6 +268,7 @@ static void emitNode(AstNode *node) {
       emitLong(OP_NOT);
       break;
     }
+    handlePop();
     break;
   case AST_ASSIGN:
     emitNode(node->as_assign.expr);
@@ -276,7 +281,7 @@ static void emitNode(AstNode *node) {
                       node->as_ident.index));
     handlePush();
     break;
-  case AST_IF:
+  case AST_IF: {
     emitNode(node->as_if.cond);
     handlePop();
 
@@ -294,19 +299,22 @@ static void emitNode(AstNode *node) {
     }
 
     break;
-  case AST_WHILE:;
+  }
+  case AST_WHILE: {
     int startOffset = position;
 
     emitNode(node->as_while.cond);
-    handlePop();
 
     int endOffset = emitDummy(sizeof(Instruction));
+    handlePop();
+
     emitNode(node->as_while.body);
 
     emitLong(CREATE_S(OP_JMP, (startOffset - position) / 8 - 1));
     patchJump(endOffset, OP_JMPF);
     break;
-  case AST_CALL:
+  }
+  case AST_CALL: {
     // fetch function name
     emitLong(CREATE_U(OP_GETGLOBAL, node->as_call.index));
     int _depth = depth;
@@ -314,10 +322,14 @@ static void emitNode(AstNode *node) {
     handlePush();
     emitNodeList(node->as_call.args);
 
-    emitLong(CREATE_AB(OP_CALL, _depth, 1));
+    // TODO: print may not be the only function that does not return
+    int has_return = node->as_call.index != 0;
 
-    handlePop();
+    emitLong(CREATE_AB(OP_CALL, _depth, has_return));
+
+    depth = _depth + has_return;
     break;
+  }
   case AST_READ:
     // TODO: this should not be hardcoded
     emitLong(CREATE_U(OP_GETGLOBAL, 1));
