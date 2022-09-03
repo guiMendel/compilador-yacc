@@ -97,14 +97,24 @@ statement : expression ';'
 
 declaration : VAR ID { 
                 add_var($2, UNKNOWN);
+
                 declareVar($2, fn()); 
                 $$ = NULL; 
               }
-            | VAR ID '=' expression { declareVar($2, fn()); $$ = new_assign_node($2, $4, fn()); }
+            | VAR ID '=' expression { 
+              add_var($2, UNKNOWN);
+              var_assignment($2, UNKNOWN);
+
+              declareVar($2, fn());
+              $$ = new_assign_node($2, $4, fn()); 
+              }
             ;
 
 expression : '(' expression ')' { $$ = $2; }
-           | ID '=' expression { $$ = new_assign_node($1, $3, fn()); }
+           | ID '=' expression { 
+              var_assignment($1, UNKNOWN);
+              $$ = new_assign_node($1, $3, fn()); 
+             }
            | function_call { $$ = $1; }
            | expression OR expression { $$ = new_binop_node(BINOP_OR, $1, $3); }
            | expression AND expression { $$ = new_binop_node(BINOP_AND, $1, $3); }

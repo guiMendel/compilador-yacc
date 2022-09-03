@@ -4,6 +4,7 @@
 #include "stdlib.h"
 
 char *var_used_to_string(bool);
+SymbolTableEntry *find_variable(char *);
 
 SymbolTable *symbol_table = NULL;
 
@@ -28,7 +29,8 @@ void display_symbol_table(SymbolTable *table) {
 
     while (entry != NULL) {
         // print table entry
-        printf("| %-10s | %-10s | %-10s |\n", entry->name, entry_type(entry->type), var_used_to_string(entry->used));
+        printf("| %-10s | %-10s | %-10s |\n", entry->name,
+               entry_type(entry->type), var_used_to_string(entry->used));
         entry = list_pop(table);
     }
     // print table footer
@@ -39,6 +41,35 @@ void add_var(char *name, VarType type) {
     // TODO: Preciso fazer o free dessa entry em algum lugar?
     SymbolTableEntry *entry = create_table_entry(name, type);
     list_push(symbol_table, entry);
+}
+
+void var_assignment(char *name, VarType type) {
+    SymbolTableEntry *entry = find_variable(name);
+    if (entry != NULL) {
+        entry->used = true;
+    } else {
+        //should print to error
+    }
+}
+
+SymbolTableEntry *find_variable(char *name) {
+    list_node *n = symbol_table->head;
+    bool has_found = false;
+
+    if (symbol_table->size == 0) {
+        return NULL;
+    }
+    while (n != NULL) {
+        SymbolTableEntry* entry = (SymbolTableEntry *)n->data;
+        has_found = strcmp(name, entry->name) == 0;
+
+        if (has_found) {
+            return (SymbolTableEntry *)n->data;
+        }
+
+        n = n->next;
+    }
+    return NULL;
 }
 
 void check_var_exists(char *name) {}

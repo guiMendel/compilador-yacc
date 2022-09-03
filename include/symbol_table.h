@@ -2,11 +2,16 @@
 #define SYMBOL_TABLE_H
 
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "list.h"
 
 typedef List SymbolTable;
 typedef enum { NUMBER, STRING, UNKNOWN } VarType;
+
+void var_assignment(char *, VarType);
 
 typedef struct SymbolTableEntry {
     bool used;
