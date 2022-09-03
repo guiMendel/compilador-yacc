@@ -2,22 +2,31 @@
 #define SYMBOL_TABLE_H
 
 #include <stdbool.h>
+
 #include "list.h"
 
 typedef List SymbolTable;
-typedef enum
-{
-    NUMBER,
-    STRING,
-} VarType;
+typedef enum { NUMBER, STRING, UNKNOWN } VarType;
+
+typedef struct SymbolTableEntry {
+    bool used;
+    VarType type;
+    char* name;
+} SymbolTableEntry;
+
+SymbolTable* symbol_table;
 
 SymbolTable* create_table();
 
-void free_table(SymbolTable* );
+void free_table(SymbolTable*);
 
-void add_var(char *name, VarType type);
-void check_var_exists(char *name);
-bool check_var_type(char *name, VarType type);
+void display_symbol_table(SymbolTable*);
+
+char* entry_type(VarType);
+
+void add_var(char*, VarType);
+void check_var_exists(char*);
+bool check_var_type(char*, VarType);
 bool check_var_usage();
 
-#endif // SYMBOL_TABLE
+#endif  // SYMBOL_TABLE

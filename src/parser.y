@@ -7,10 +7,14 @@ extern int yylineno;
 extern FILE *yyin;
 void yyerror(char *message);
 
+
 #include "ast.h"
 #include "list.h"
+#include "symbol_table.h"
 #include "compiler.h"
 #include "parser.h"
+
+extern SymbolTable* symbol_table;
 
 static List functions;
 #define fn() ((Function *)list_top(&functions))
@@ -91,7 +95,11 @@ statement : expression ';'
           | ';' { $$ = NULL; }
           ;
 
-declaration : VAR ID { declareVar($2, fn()); $$ = NULL; }
+declaration : VAR ID { 
+                add_var($2, UNKNOWN);
+                declareVar($2, fn()); 
+                $$ = NULL; 
+              }
             | VAR ID '=' expression { declareVar($2, fn()); $$ = new_assign_node($2, $4, fn()); }
             ;
 
@@ -140,7 +148,12 @@ Function* parse(FILE *file) {
 
   yyin = file;
 
+  symbol_table = create_table();
+
   yyparse();
+
+  display_symbol_table(symbol_table);
+  free_table(symbol_table);
 
   return fn();
 }
