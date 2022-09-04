@@ -12,7 +12,6 @@ typedef List SymbolTable;
 typedef enum { NUMBER, STRING, UNKNOWN } VarType;
 
 void var_assignment(char *, VarType);
-
 typedef struct SymbolTableEntry {
     bool used;
     VarType type;

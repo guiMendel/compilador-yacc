@@ -38,17 +38,31 @@ void display_symbol_table(SymbolTable *table) {
 }
 
 void add_var(char *name, VarType type) {
-    // TODO: Preciso fazer o free dessa entry em algum lugar?
-    SymbolTableEntry *entry = create_table_entry(name, type);
-    list_push(symbol_table, entry);
+    SymbolTableEntry *entry = find_variable(name);
+    if (entry == NULL) {
+        SymbolTableEntry *entry = create_table_entry(name, type);
+        list_push(symbol_table, entry);
+    } else {
+        // should print to error
+        printf("Variable %s is already declared\n", name);
+        return;
+    }
 }
 
 void var_assignment(char *name, VarType type) {
     SymbolTableEntry *entry = find_variable(name);
     if (entry != NULL) {
+        if (entry->type == UNKNOWN ||  entry->type == type) {
+            entry->type = type;
+        } else {
+            printf("Assiging a value of type different from variable %s\n", name);
+            return;
+        }
         entry->used = true;
     } else {
-        //should print to error
+        // should print to error
+        printf("Variable %s is not declared\n", name);
+        return;
     }
 }
 
@@ -60,7 +74,7 @@ SymbolTableEntry *find_variable(char *name) {
         return NULL;
     }
     while (n != NULL) {
-        SymbolTableEntry* entry = (SymbolTableEntry *)n->data;
+        SymbolTableEntry *entry = (SymbolTableEntry *)n->data;
         has_found = strcmp(name, entry->name) == 0;
 
         if (has_found) {

@@ -76,11 +76,16 @@ function_declaration : FUNCTION ID
                      ;
 
 parameters : empty { $$ = &fn()->params; }
-           | ID more_parameters { list_push($2, $1); $$ = $2; }
+           | ID more_parameters { 
+              add_var($1, UNKNOWN);
+              list_push($2, $1); $$ = $2; 
+            }
            ; 
 
 more_parameters : empty { $$ = &fn()->params; }
-                | ',' ID more_parameters { list_push($3, $2); $$ = $3; }
+                | ',' ID more_parameters { 
+                  add_var($2, UNKNOWN);
+                  list_push($3, $2); $$ = $3; }
                 ;
 
 statement : expression ';'
@@ -102,8 +107,8 @@ declaration : VAR ID {
                 $$ = NULL; 
               }
             | VAR ID '=' expression { 
-              add_var($2, UNKNOWN);
-              var_assignment($2, UNKNOWN);
+              add_var($2, NUMBER);
+              var_assignment($2, NUMBER);
 
               declareVar($2, fn());
               $$ = new_assign_node($2, $4, fn()); 
@@ -112,7 +117,7 @@ declaration : VAR ID {
 
 expression : '(' expression ')' { $$ = $2; }
            | ID '=' expression { 
-              var_assignment($1, UNKNOWN);
+              var_assignment($1, NUMBER);
               $$ = new_assign_node($1, $3, fn()); 
              }
            | function_call { $$ = $1; }
