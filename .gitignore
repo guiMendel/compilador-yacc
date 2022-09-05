@@ -1,6 +1,15 @@
+output
 *.out
-lex.yy.c
-y.tab.c
-y.tab.h
-simp
+
 .vscode
+
+# clangd
+compile_commands.json
+.cache
+
+# flex/bison
+y.tab.h
+parse.c
+
+lua
+*.tar.gz
