@@ -96,7 +96,10 @@ statement : expression ';'
           | DO statements END { $$ = $2; }
           | RETURN ';' { $$ = new_return_node(NULL); }
           | RETURN expression ';' { $$ = new_return_node($2); }
-          | READ ID ';' { $$ = new_read_node($2, fn()); }
+          | READ ID ';' { 
+            var_read($2);
+            $$ = new_read_node($2, fn()); 
+            }
           | ';' { $$ = NULL; }
           ;
 
@@ -134,7 +137,10 @@ expression : '(' expression ')' { $$ = $2; }
            | '-' expression { $$ = new_unop_node(UNOP_NEG, $2); }
            | '!' expression { $$ = new_unop_node(UNOP_NOT, $2); }
            | NUM { $$ = new_number_node($1); }
-           | ID { $$ = new_ident_node($1, fn()); }
+           | ID { 
+            var_read($1);
+            $$ = new_ident_node($1, fn()); 
+            }
            ;
 
 function_call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn()); }

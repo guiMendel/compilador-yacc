@@ -28,6 +28,7 @@ typedef struct ErrorEntry {
 SymbolTable* create_table();
 
 void var_assignment(char*, VarType);
+void var_read(char*);
 
 void free_table(SymbolTable*);
 

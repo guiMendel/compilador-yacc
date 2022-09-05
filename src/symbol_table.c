@@ -84,6 +84,20 @@ void add_var(char *name, VarType type) {
     }
 }
 
+void var_read(char *name) {
+    SymbolTableEntry *entry = find_variable(name);
+    if (entry != NULL) {
+        entry->used = true;
+    } else {
+        // should print to error
+        char *template = "Variable %s is not declared\n";
+        char *str = interpolate_error(template, name);
+        ErrorEntry *error = create_error_entry(str);
+        list_push(error_list, error);
+        return;
+    }
+}
+
 void var_assignment(char *name, VarType type) {
     SymbolTableEntry *entry = find_variable(name);
     if (entry != NULL) {
