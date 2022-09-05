@@ -11,7 +11,6 @@
 typedef List SymbolTable;
 typedef enum { NUMBER, STRING, UNKNOWN } VarType;
 
-void var_assignment(char *, VarType);
 typedef struct SymbolTableEntry {
     bool used;
     VarType type;
@@ -20,7 +19,15 @@ typedef struct SymbolTableEntry {
 
 SymbolTable* symbol_table;
 
+typedef List ErrorList;
+
+typedef struct ErrorEntry {
+    char* error;
+} ErrorEntry;
+
 SymbolTable* create_table();
+
+void var_assignment(char*, VarType);
 
 void free_table(SymbolTable*);
 

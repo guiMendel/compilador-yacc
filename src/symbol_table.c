@@ -7,10 +7,25 @@ char *var_used_to_string(bool);
 SymbolTableEntry *find_variable(char *);
 
 SymbolTable *symbol_table = NULL;
+ErrorList *error_list = NULL;
 
-SymbolTable *create_table() { return new_list(); }
+SymbolTable *create_table() {
+    SymbolTable *symbol_table = new_list();
+    error_list = new_list();
 
-void free_table(SymbolTable *t) { list_free(t); }
+    return symbol_table;
+}
+
+void free_table(SymbolTable *t) {
+    list_free(error_list);
+    list_free(t);
+}
+
+ErrorEntry *create_error_entry(char *content) {
+    ErrorEntry *entry = malloc(sizeof(ErrorEntry *));
+    entry->error = content;
+    return entry;
+}
 
 SymbolTableEntry *create_table_entry(char *name, VarType type) {
     SymbolTableEntry *entry = malloc(sizeof(SymbolTableEntry *));
@@ -44,18 +59,20 @@ void add_var(char *name, VarType type) {
         list_push(symbol_table, entry);
     } else {
         // should print to error
-        printf("Variable %s is already declared\n", name);
-        return;
+        char str[200];
+        sprintf(str, "Variable %s is already declared\n", name);
+        ErrorEntry* error = create_error_entry(str);
     }
 }
 
 void var_assignment(char *name, VarType type) {
     SymbolTableEntry *entry = find_variable(name);
     if (entry != NULL) {
-        if (entry->type == UNKNOWN ||  entry->type == type) {
+        if (entry->type == UNKNOWN || entry->type == type) {
             entry->type = type;
         } else {
-            printf("Assiging a value of type different from variable %s\n", name);
+            printf("Assiging a value of type different from variable %s\n",
+                   name);
             return;
         }
         entry->used = true;
