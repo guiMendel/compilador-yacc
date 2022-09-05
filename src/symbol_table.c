@@ -52,16 +52,35 @@ void display_symbol_table(SymbolTable *table) {
     printf("\n");
 }
 
+bool has_semantic_errors() { return error_list->size > 0; }
+
+void display_error_list() {
+    ErrorEntry *entry = list_pop(error_list);
+
+    while (entry != NULL) {
+        // print table entry
+        printf("%s\n", entry->error);
+        entry = list_pop(error_list);
+    }
+}
+
+char *interpolate_error(char *template, char *content) {
+    char *str = malloc(sizeof(char *) * 200);
+    sprintf(str, template, content);
+    return str;
+}
+
 void add_var(char *name, VarType type) {
     SymbolTableEntry *entry = find_variable(name);
     if (entry == NULL) {
-        SymbolTableEntry *entry = create_table_entry(name, type);
-        list_push(symbol_table, entry);
+        SymbolTableEntry *symbol_entry = create_table_entry(name, type);
+        list_push(symbol_table, symbol_entry);
     } else {
         // should print to error
-        char str[200];
-        sprintf(str, "Variable %s is already declared\n", name);
-        ErrorEntry* error = create_error_entry(str);
+        char *template = "Variable %s is already declared\n";
+        char *str = interpolate_error(template, name);
+        ErrorEntry *error = create_error_entry(str);
+        list_push(error_list, error);
     }
 }
 
@@ -71,14 +90,20 @@ void var_assignment(char *name, VarType type) {
         if (entry->type == UNKNOWN || entry->type == type) {
             entry->type = type;
         } else {
-            printf("Assiging a value of type different from variable %s\n",
-                   name);
+            char *template =
+                "Assiging a value of type different from variable %s\n";
+            char *str = interpolate_error(template, name);
+            ErrorEntry *error = create_error_entry(str);
+            list_push(error_list, error);
             return;
         }
         entry->used = true;
     } else {
         // should print to error
-        printf("Variable %s is not declared\n", name);
+        char *template = "Variable %s is not declared\n";
+        char *str = interpolate_error(template, name);
+        ErrorEntry *error = create_error_entry(str);
+        list_push(error_list, error);
         return;
     }
 }

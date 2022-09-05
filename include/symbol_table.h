@@ -39,5 +39,7 @@ void add_var(char*, VarType);
 void check_var_exists(char*);
 bool check_var_type(char*, VarType);
 bool check_var_usage();
+bool has_semantic_errors();
+void display_error_list();
 
 #endif  // SYMBOL_TABLE

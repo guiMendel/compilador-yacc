@@ -166,8 +166,13 @@ Function* parse(FILE *file) {
   symbol_table = create_table();
 
   yyparse();
-
+  
   display_symbol_table(symbol_table);
+
+  if(has_semantic_errors()){
+    display_error_list();
+  }
+
   free_table(symbol_table);
 
   return fn();
