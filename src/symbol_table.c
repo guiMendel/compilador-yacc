@@ -4,7 +4,7 @@
 #include "stdlib.h"
 
 char *var_used_to_string(bool);
-SymbolTableEntry *find_variable(char *);
+SymbolTableEntry *find_table_entry(char *);
 
 SymbolTable *symbol_table = NULL;
 ErrorList *error_list = NULL;
@@ -33,7 +33,7 @@ ErrorEntry *create_error_entry(char *content) {
 SymbolTableEntry *create_table_entry(char *name, VarType type) {
     SymbolTableEntry *entry = malloc(sizeof(SymbolTableEntry *));
     entry->used = false;
-    entry->type = UNKNOWN;
+    entry->type = type;
     entry->name = name;
     return entry;
 }
@@ -88,8 +88,8 @@ char *interpolate_error(char *template, char *content) {
     return str;
 }
 
-void add_var(char *name, VarType type) {
-    SymbolTableEntry *entry = find_variable(name);
+void var_add(char *name, VarType type) {
+    SymbolTableEntry *entry = find_table_entry(name);
     if (entry == NULL) {
         SymbolTableEntry *symbol_entry = create_table_entry(name, type);
         list_push(symbol_table, symbol_entry);
@@ -100,7 +100,7 @@ void add_var(char *name, VarType type) {
 }
 
 void var_read(char *name) {
-    SymbolTableEntry *entry = find_variable(name);
+    SymbolTableEntry *entry = find_table_entry(name);
     if (entry != NULL) {
         entry->used = true;
     } else {
@@ -110,7 +110,7 @@ void var_read(char *name) {
 }
 
 void var_assignment(char *name, VarType type) {
-    SymbolTableEntry *entry = find_variable(name);
+    SymbolTableEntry *entry = find_table_entry(name);
     if (entry != NULL) {
         if (entry->type == UNKNOWN || entry->type == type) {
             entry->type = type;
@@ -121,6 +121,36 @@ void var_assignment(char *name, VarType type) {
         entry->used = true;
     } else {
         variable_not_declared(name);
+        return;
+    }
+}
+
+void procedure_add(char *name) {
+    SymbolTableEntry *entry = find_table_entry(name);
+    if (entry == NULL) {
+        SymbolTableEntry *symbol_entry = create_table_entry(name, PROCEDURE);
+        list_push(symbol_table, symbol_entry);
+    } else {
+        procedure_already_declared(name);
+        return;
+    }
+}
+
+bool is_system_global_procedure(char *name){
+    return strcmp(name, "print") == 0;
+}
+
+void procedure_read(char *name) {
+    SymbolTableEntry *entry = find_table_entry(name);
+
+    if(is_system_global_procedure(name)){
+        return;
+    }
+
+    if (entry != NULL) {
+        entry->used = true;
+    } else {
+        procedure_not_declared(name);
         return;
     }
 }
@@ -167,7 +197,7 @@ void check_procedure_not_used() {
     return;
 }
 
-SymbolTableEntry *find_variable(char *name) {
+SymbolTableEntry *find_table_entry(char *name) {
     list_node *n = symbol_table->head;
     bool has_found = false;
 
