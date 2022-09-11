@@ -49,7 +49,11 @@ static List functions;
 %right '!'
 
 %%
-program : statements { fn()->code = $1; }
+program : statements { 
+      fn()->code = $1; 
+      check_variable_not_used();
+      check_procedure_not_used();
+    }
         ;
 
 statements : empty { $$ = new_block_node(); }
@@ -61,6 +65,7 @@ function_declaration : FUNCTION ID
                       {
                         Function *function = new_function("=(none)", fn());
                         declareVar($2, fn());
+                        procedure_add($2);
 
                         /** know thyselves **/
                         declareVar($2, function);
@@ -77,14 +82,14 @@ function_declaration : FUNCTION ID
 
 parameters : empty { $$ = &fn()->params; }
            | ID more_parameters { 
-              add_var($1, UNKNOWN);
+              var_add($1, UNKNOWN);
               list_push($2, $1); $$ = $2; 
             }
            ; 
 
 more_parameters : empty { $$ = &fn()->params; }
                 | ',' ID more_parameters { 
-                  add_var($2, UNKNOWN);
+                  var_add($2, UNKNOWN);
                   list_push($3, $2); $$ = $3; }
                 ;
 
@@ -104,13 +109,13 @@ statement : expression ';'
           ;
 
 declaration : VAR ID { 
-                add_var($2, UNKNOWN);
+                var_add($2, UNKNOWN);
 
                 declareVar($2, fn()); 
                 $$ = NULL; 
               }
             | VAR ID '=' expression { 
-              add_var($2, NUMBER);
+              var_add($2, NUMBER);
               var_assignment($2, NUMBER);
 
               declareVar($2, fn());
@@ -143,7 +148,10 @@ expression : '(' expression ')' { $$ = $2; }
             }
            ;
 
-function_call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn()); }
+function_call : ID '(' arguments ')' { 
+    $$ = new_call_node($1, $3, fn()); 
+    procedure_read($1);
+  }
               ;
 
 arguments : empty { $$ = new_list(); }
@@ -160,7 +168,7 @@ empty : /* empty */;
 
 void yyerror(char *message) {
   fprintf(stderr, "Error: %s at %d\n", message, yylineno);
-  exit(1);
+  exit(EXIT_FAILURE);
 }
 
 Function* parse(FILE *file) {
@@ -175,8 +183,14 @@ Function* parse(FILE *file) {
   
   display_symbol_table(symbol_table);
 
-  if(has_semantic_errors()){
+  if(has_semantic_warnings()) {
+    display_warning_list();
+  }
+
+  if(has_semantic_errors()) {
     display_error_list();
+    free_table(symbol_table);
+    exit(EXIT_FAILURE);
   }
 
   free_table(symbol_table);
