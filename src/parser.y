@@ -49,7 +49,11 @@ static List functions;
 %right '!'
 
 %%
-program : statements { fn()->code = $1; }
+program : statements { 
+      fn()->code = $1; 
+      check_variable_not_used();
+      check_procedure_not_used();
+    }
         ;
 
 statements : empty { $$ = new_block_node(); }

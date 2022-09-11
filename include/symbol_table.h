@@ -11,7 +11,7 @@
 extern int yylineno;
 
 typedef List SymbolTable;
-typedef enum { NUMBER, STRING, UNKNOWN } VarType;
+typedef enum { NUMBER, STRING, UNKNOWN, PROCEDURE } VarType;
 
 typedef struct SymbolTableEntry {
     bool used;
@@ -43,6 +43,9 @@ void assign_value_type_different(char *);
 void procedure_not_used(char *name);
 void procedure_not_declared(char *);
 void procedure_already_declared(char *);
+
+void check_variable_not_used();
+void check_procedure_not_used();
 
 void free_table(SymbolTable*);
 

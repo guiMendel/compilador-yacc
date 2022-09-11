@@ -125,6 +125,48 @@ void var_assignment(char *name, VarType type) {
     }
 }
 
+void check_variable_not_used() {
+    list_node *n = symbol_table->head;
+    bool not_used = false;
+
+    if (symbol_table->size == 0) {
+        return;
+    }
+    while (n != NULL) {
+        SymbolTableEntry *entry = (SymbolTableEntry *)n->data;
+        not_used = !entry->used && entry->type != PROCEDURE;
+
+        if (not_used) {
+            variable_not_used(entry->name);
+            not_used = false;
+        }
+
+        n = n->next;
+    }
+    return;
+}
+
+void check_procedure_not_used() {
+    list_node *n = symbol_table->head;
+    bool not_used = false;
+
+    if (symbol_table->size == 0) {
+        return;
+    }
+    while (n != NULL) {
+        SymbolTableEntry *entry = (SymbolTableEntry *)n->data;
+        not_used = !entry->used && entry->type == PROCEDURE;
+
+        if (not_used) {
+            procedure_not_used(entry->name);
+            not_used = false;
+        }
+
+        n = n->next;
+    }
+    return;
+}
+
 SymbolTableEntry *find_variable(char *name) {
     list_node *n = symbol_table->head;
     bool has_found = false;
@@ -152,6 +194,9 @@ char *entry_type(VarType type) {
     if (type == NUMBER) {
         return "NUMBER";
     }
+    if (type == PROCEDURE) {
+        return "PROCEDURE";
+    }
     return "UNKNOWN";
 }
 
@@ -171,7 +216,7 @@ void variable_not_used(char *name) {
 }
 
 void procedure_not_used(char *name) {
-    char *template = "Variable %s, at line %d is not being used.";
+    char *template = "Procedure %s, at line %d is not being used.";
     char *str = interpolate_error(template, name);
     WarningEntry *entry = create_error_entry(str);
     list_push(warning_list, entry);
