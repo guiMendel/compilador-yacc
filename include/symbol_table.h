@@ -22,19 +22,27 @@ typedef struct SymbolTableEntry {
 SymbolTable* symbol_table;
 
 typedef List ErrorList;
+typedef List WarningList;
 
 typedef struct ErrorEntry {
-    char* error;
+    char* message;
 } ErrorEntry;
+
+typedef ErrorEntry WarningEntry;
 
 SymbolTable* create_table();
 
 void var_assignment(char*, VarType);
 void var_read(char*);
 
-void variable_not_declared_error(char *);
-void variable_already_declared_error(char *);
-void assign_value_type_different_error(char *);
+void variable_not_declared(char *);
+void variable_already_declared(char *);
+void variable_not_used(char *name);
+void assign_value_type_different(char *);
+
+void procedure_not_used(char *name);
+void procedure_not_declared(char *);
+void procedure_already_declared(char *);
 
 void free_table(SymbolTable*);
 
@@ -43,10 +51,9 @@ void display_symbol_table(SymbolTable*);
 char* entry_type(VarType);
 
 void add_var(char*, VarType);
-void check_var_exists(char*);
-bool check_var_type(char*, VarType);
-bool check_var_usage();
 bool has_semantic_errors();
+bool has_semantic_warnings();
+void display_warning_list();
 void display_error_list();
 
 #endif  // SYMBOL_TABLE

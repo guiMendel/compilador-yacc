@@ -175,7 +175,11 @@ Function* parse(FILE *file) {
   
   display_symbol_table(symbol_table);
 
-  if(has_semantic_errors()){
+  if(has_semantic_warnings()) {
+    display_warning_list();
+  }
+
+  if(has_semantic_errors()) {
     display_error_list();
     free_table(symbol_table);
     exit(EXIT_FAILURE);

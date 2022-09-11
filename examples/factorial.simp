@@ -1,6 +1,7 @@
 function factorial(number)
   # Accumulates the result
   var result;
+  var result;
 
   result = 1;
 

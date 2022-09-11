@@ -102,7 +102,7 @@ AstNode *new_ident_node(char *name, Function *fn) {
   if (index == -1) {
     index = findGlobal(name, fn);
     if (index == -1) {
-      variable_not_declared_error(name);
+      variable_not_declared(name);
       //printf("Error: Unknown variable %s\n", name);
       //exit(EXIT_FAILURE);
     }
@@ -125,7 +125,7 @@ AstNode *new_assign_node(char *name, AstNode *expr, Function *fn) {
   if (index == -1) {
     index = findGlobal(name, fn);
     if (index == -1) {
-      variable_not_declared_error(name);
+      variable_not_declared(name);
       //printf("Error: Unknown variable %s\n", name);
       //exit(EXIT_FAILURE);
     }
