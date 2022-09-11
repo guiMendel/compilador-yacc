@@ -2,6 +2,7 @@
 #define AST_H
 
 #include "list.h"
+#include "symbol_table.h"
 #include <stdint.h>
 
 typedef enum {

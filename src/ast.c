@@ -102,8 +102,9 @@ AstNode *new_ident_node(char *name, Function *fn) {
   if (index == -1) {
     index = findGlobal(name, fn);
     if (index == -1) {
-      printf("Error: Unknown variable %s\n", name);
-      exit(1);
+      variable_not_declared_error(name);
+      //printf("Error: Unknown variable %s\n", name);
+      //exit(EXIT_FAILURE);
     }
   } else {
     node->as_ident.is_local = 1;
@@ -124,8 +125,9 @@ AstNode *new_assign_node(char *name, AstNode *expr, Function *fn) {
   if (index == -1) {
     index = findGlobal(name, fn);
     if (index == -1) {
-      printf("Error: Unknown variable %s\n", name);
-      exit(1);
+      variable_not_declared_error(name);
+      //printf("Error: Unknown variable %s\n", name);
+      //exit(EXIT_FAILURE);
     }
   } else {
     node->as_assign.is_local = 1;

@@ -8,6 +8,8 @@
 
 #include "list.h"
 
+extern int yylineno;
+
 typedef List SymbolTable;
 typedef enum { NUMBER, STRING, UNKNOWN } VarType;
 
@@ -29,6 +31,10 @@ SymbolTable* create_table();
 
 void var_assignment(char*, VarType);
 void var_read(char*);
+
+void variable_not_declared_error(char *);
+void variable_already_declared_error(char *);
+void assign_value_type_different_error(char *);
 
 void free_table(SymbolTable*);
 

@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 
   if (infile == NULL) {
     fprintf(stderr, "Could not open file\n");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   Function *f = parse(infile);

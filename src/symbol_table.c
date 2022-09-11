@@ -66,7 +66,7 @@ void display_error_list() {
 
 char *interpolate_error(char *template, char *content) {
     char *str = malloc(sizeof(char *) * 200);
-    sprintf(str, template, content);
+    sprintf(str, template, content, yylineno);
     return str;
 }
 
@@ -76,11 +76,8 @@ void add_var(char *name, VarType type) {
         SymbolTableEntry *symbol_entry = create_table_entry(name, type);
         list_push(symbol_table, symbol_entry);
     } else {
-        // should print to error
-        char *template = "Variable %s is already declared\n";
-        char *str = interpolate_error(template, name);
-        ErrorEntry *error = create_error_entry(str);
-        list_push(error_list, error);
+        variable_already_declared_error(name);
+        return;
     }
 }
 
@@ -89,11 +86,7 @@ void var_read(char *name) {
     if (entry != NULL) {
         entry->used = true;
     } else {
-        // should print to error
-        char *template = "Variable %s is not declared\n";
-        char *str = interpolate_error(template, name);
-        ErrorEntry *error = create_error_entry(str);
-        list_push(error_list, error);
+        variable_not_declared_error(name);
         return;
     }
 }
@@ -104,20 +97,12 @@ void var_assignment(char *name, VarType type) {
         if (entry->type == UNKNOWN || entry->type == type) {
             entry->type = type;
         } else {
-            char *template =
-                "Assiging a value of type different from variable %s\n";
-            char *str = interpolate_error(template, name);
-            ErrorEntry *error = create_error_entry(str);
-            list_push(error_list, error);
+            assign_value_type_different_error(name);
             return;
         }
         entry->used = true;
     } else {
-        // should print to error
-        char *template = "Variable %s is not declared\n";
-        char *str = interpolate_error(template, name);
-        ErrorEntry *error = create_error_entry(str);
-        list_push(error_list, error);
+        variable_not_declared_error(name);
         return;
     }
 }
@@ -164,4 +149,27 @@ char *var_used_to_string(bool is_used) {
     } else {
         return "FALSE";
     }
+}
+
+void variable_not_declared_error(char *name) {
+    char *template = "Variable %s, at line %d is not declared.\n";
+    char *str = interpolate_error(template, name);
+    ErrorEntry *error = create_error_entry(str);
+    list_push(error_list, error);
+}
+
+void variable_already_declared_error(char *name) {
+    char *template = "Variable %s, at line %d, is already declared.\n";
+    char *str = interpolate_error(template, name);
+    ErrorEntry *error = create_error_entry(str);
+    list_push(error_list, error);
+}
+
+void assign_value_type_different_error(char *name) {
+    char *template =
+        "Assiging a value of type different to variable %s, at line "
+        "%d.\n";
+    char *str = interpolate_error(template, name);
+    ErrorEntry *error = create_error_entry(str);
+    list_push(error_list, error);
 }

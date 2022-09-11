@@ -160,7 +160,7 @@ empty : /* empty */;
 
 void yyerror(char *message) {
   fprintf(stderr, "Error: %s at %d\n", message, yylineno);
-  exit(1);
+  exit(EXIT_FAILURE);
 }
 
 Function* parse(FILE *file) {
@@ -177,6 +177,8 @@ Function* parse(FILE *file) {
 
   if(has_semantic_errors()){
     display_error_list();
+    free_table(symbol_table);
+    exit(EXIT_FAILURE);
   }
 
   free_table(symbol_table);
