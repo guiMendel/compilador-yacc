@@ -1,0 +1,8 @@
+function t()
+  function k()
+    return 1;
+  end
+  return k();
+end
+
+print(t());

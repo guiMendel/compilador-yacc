@@ -17,8 +17,8 @@ static List functions;
  * This is used to keep track of the number of values on the stack.
  *
  * As depth is only used for call/return, a better aproach would be to
- * query the number of paramenteres of the function being called, and add that to
- * the number of arguments of the callee (always on the stack).
+ * query the number of paramenteres of the function being called, and add that
+ *to the number of arguments of the callee (always on the stack).
  **/
 int depth;
 
@@ -252,7 +252,6 @@ static void emitNode(AstNode *node) {
     break;
   case AST_RETURN:
     emitNode(node->as_ret.expr);
-    handlePop();
     emitLong(CREATE_U(OP_RETURN, depth));
     break;
   case AST_BINOP:
@@ -277,7 +276,9 @@ static void emitNode(AstNode *node) {
     handlePop();
     break;
   case AST_IDENT:
-    emitLong(CREATE_U(node->as_ident.is_local ? OP_GETLOCAL : OP_GETGLOBAL,
+    emitLong(CREATE_U(node->as_ident.is_upvalue ? OP_PUSHUPVALUE
+                      : node->as_ident.is_local ? OP_GETLOCAL
+                                                : OP_GETGLOBAL,
                       node->as_ident.index));
     handlePush();
     break;
@@ -316,7 +317,10 @@ static void emitNode(AstNode *node) {
   }
   case AST_CALL: {
     // fetch function name
-    emitLong(CREATE_U(OP_GETGLOBAL, node->as_call.index));
+    emitLong(CREATE_U(node->as_call.is_upvalue ? OP_PUSHUPVALUE
+                      : node->as_call.is_local ? OP_GETLOCAL
+                                                : OP_GETGLOBAL,
+                      node->as_call.index));
     int _depth = depth;
 
     handlePush();

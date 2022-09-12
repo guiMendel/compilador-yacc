@@ -1,0 +1,28 @@
+function Y(g)
+  function a(f) 
+    return f(f);
+  end
+
+  function b(f)
+    function c(x)
+      var d = f(f);
+      return d(x);
+    end
+    return g(c);
+  end
+
+  return a(b);
+end
+
+function F(f)
+  function g(n)
+    if (n == 0) return 1;
+    else return n * f(n - 1);
+  end
+
+  return g;
+end
+
+var factorial = Y(F);
+print(factorial(5));
+

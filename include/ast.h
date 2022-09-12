@@ -66,6 +66,7 @@ typedef struct AstNode {
     struct {
       int index;
       int is_local;
+      int is_upvalue;
     } as_ident;
 
     struct {
@@ -88,6 +89,8 @@ typedef struct AstNode {
     struct {
       int index;
       List *args;
+      int is_local;
+      int is_upvalue;
     } as_call;
 
     struct {
