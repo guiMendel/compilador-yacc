@@ -4,6 +4,8 @@
 #include "list.h"
 #include <stdint.h>
 
+typedef struct Function Function;
+
 typedef enum {
   BINOP_ADD,
   BINOP_SUB,
@@ -66,6 +68,7 @@ typedef struct AstNode {
     struct {
       int index;
       int is_local;
+      int is_upvalue;
     } as_ident;
 
     struct {
@@ -88,6 +91,8 @@ typedef struct AstNode {
     struct {
       int index;
       List *args;
+      int is_local;
+      int is_upvalue;
     } as_call;
 
     struct {
@@ -97,6 +102,7 @@ typedef struct AstNode {
     struct {
       int name_index;
       int fn_index;
+      Function *fn;
       List *args;
     } as_function;
   };
@@ -120,6 +126,8 @@ typedef struct Function {
   List kfunc;
 
   struct Function *parent;
+
+  List upvalues;
 
   AstNode *code; // pointer to a block node
 } Function;

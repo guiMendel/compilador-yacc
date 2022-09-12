@@ -3,6 +3,7 @@
 #include "opcodes.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 char *currentChunk;
@@ -277,7 +278,9 @@ static void emitNode(AstNode *node) {
     handlePop();
     break;
   case AST_IDENT:
-    emitLong(CREATE_U(node->as_ident.is_local ? OP_GETLOCAL : OP_GETGLOBAL,
+    emitLong(CREATE_U(node->as_ident.is_upvalue ? OP_PUSHUPVALUE
+                      : node->as_ident.is_local ? OP_GETLOCAL
+                                                : OP_GETGLOBAL,
                       node->as_ident.index));
     handlePush();
     break;
@@ -316,14 +319,18 @@ static void emitNode(AstNode *node) {
   }
   case AST_CALL: {
     // fetch function name
-    emitLong(CREATE_U(OP_GETGLOBAL, node->as_call.index));
+    emitLong(CREATE_U(node->as_call.is_upvalue ? OP_PUSHUPVALUE
+                      : node->as_call.is_local ? OP_GETLOCAL
+                                               : OP_GETGLOBAL,
+                      node->as_call.index));
+
     int _depth = depth;
 
     handlePush();
     emitNodeList(node->as_call.args);
 
     // TODO: print may not be the only function that does not return
-    int has_return = node->as_call.index != 0;
+    int has_return = node->as_call.is_local || node->as_call.is_upvalue || node->as_call.index != 0;
 
     emitLong(CREATE_AB(OP_CALL, _depth, has_return));
 
@@ -339,10 +346,19 @@ static void emitNode(AstNode *node) {
 
     emitLong(CREATE_U(OP_SETGLOBAL, node->as_read.index));
     break;
-  case AST_FUNCTION:
+  case AST_FUNCTION: {
+    // emit upvalues
+    list_node *u = node->as_function.fn->upvalues.head;
+    while (u != NULL) {
+      emitLong(CREATE_U(OP_GETLOCAL, *(int*)u->data));
+      free(u->data);
+      u = u->next;
+    }
+
     emitLong(CREATE_AB(OP_CLOSURE, node->as_function.fn_index, 0));
     emitLong(CREATE_U(OP_SETGLOBAL, node->as_function.name_index));
     break;
+  }
   }
 }
 
