@@ -318,11 +318,8 @@ static void emitNode(AstNode *node) {
     break;
   }
   case AST_CALL: {
-    // fetch function name
-    emitLong(CREATE_U(node->as_call.is_upvalue ? OP_PUSHUPVALUE
-                      : node->as_call.is_local ? OP_GETLOCAL
-                                               : OP_GETGLOBAL,
-                      node->as_call.index));
+    emitNode(node->as_call.expr);
+    handlePop();
 
     int _depth = currentFunction()->depth;
 

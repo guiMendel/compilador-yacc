@@ -5,8 +5,7 @@ function Y(g)
 
   function b(f)
     function c(x)
-      var d = f(f);
-      return d(x);
+      return f(f)(x);
     end
     return g(c);
   end

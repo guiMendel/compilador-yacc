@@ -90,10 +90,8 @@ typedef struct AstNode {
     } as_while;
 
     struct {
-      int index;
+      struct AstNode *expr;
       List *args;
-      int is_local;
-      int is_upvalue;
     } as_call;
 
     struct {
@@ -150,7 +148,7 @@ AstNode *new_while_node(AstNode *cond, AstNode *body);
 
 AstNode *new_ident_node(char *name, Function *fn);
 AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn);
-AstNode *new_call_node(char *name, List *args, Function *fn);
+AstNode *new_call_node(AstNode *expr, List *args);
 AstNode *new_read_node(char *name, Function *fn);
 AstNode *new_print_node(AstNode *expr);
 

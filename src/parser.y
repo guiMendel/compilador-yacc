@@ -112,7 +112,7 @@ expression : '(' expression ')' { $$ = $2; }
            | ID { $$ = new_ident_node($1, fn()); }
            ;
 
-function_call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn()); }
+function_call : expression '(' arguments ')' { $$ = new_call_node($1, $3); }
               ;
 
 arguments : empty { $$ = new_list(); }

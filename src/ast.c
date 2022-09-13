@@ -102,6 +102,10 @@ AstNode *new_ident_node(char *name, Function *fn) {
       exit(1);
     } else {
       node->as_ident.is_upvalue = 1;
+
+      int *upvalue = malloc(sizeof(int));
+      *upvalue = index;
+      list_push(&fn->upvalues, upvalue);
     }
   } else {
     node->as_ident.is_local = 1;
@@ -124,31 +128,11 @@ AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn) {
   return node;
 }
 
-AstNode *new_call_node(char *name, List *args, Function *fn) {
+AstNode *new_call_node(AstNode *expr, List *args) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_CALL;
 
-  node->as_call.is_local = 0;
-  node->as_call.is_upvalue = 0;
-
-  int index = findLocal(name, fn);
-  if (index == -1) {
-    if (fn->parent)
-      index = findLocal(name, fn->parent);
-    if (index == -1) {
-      printf("Error: Unknown variable %s\n", name);
-      exit(1);
-    } else {
-      node->as_call.is_upvalue = 1;
-      int *upvalue = malloc(sizeof(int));
-      *upvalue = index;
-      list_push(&fn->upvalues, upvalue);
-    }
-  } else {
-    node->as_call.is_local = 1;
-  }
-
-  node->as_call.index = index;
+  node->as_call.expr = expr;
   node->as_call.args = args;
   return node;
 }
