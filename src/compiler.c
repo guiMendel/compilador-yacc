@@ -14,25 +14,17 @@ int position;
 /** functions stack */
 static List functions;
 
-/*
- * This is used to keep track of the number of values on the stack.
- *
- * As depth is only used for call/return, a better aproach would be to
- * query the number of paramenteres of the function being called, and add that to
- * the number of arguments of the callee (always on the stack).
- **/
-int depth;
 
 #define currentFunction() ((Function *)list_top(&functions))
 
 static void handlePush() {
-  depth++;
-  if (depth > currentFunction()->max_stack) {
-    currentFunction()->max_stack = depth;
+  currentFunction()->depth++;
+  if (currentFunction()->depth > currentFunction()->max_stack) {
+    currentFunction()->max_stack = currentFunction()->depth;
   }
 }
 
-static void handlePop() { depth--; }
+static void handlePop() { currentFunction()->depth--; }
 
 static void emitNode(AstNode *node);
 
@@ -125,7 +117,7 @@ static void emitHeader() {
 
 static void emitFunction(Function *f) {
   list_push(&functions, f);
-  depth += f->params.size;
+  f->depth = f->params.size;
 
   emitString(f->source_name);
 
@@ -154,10 +146,6 @@ static void emitFunction(Function *f) {
   // patch up the stack size
   patchOffset(stackOffset, f->max_stack);
 
-  // +1 for the return value
-  //
-  // TODO: this is not correct, as the function may not return
-  depth -= f->params.size;
   list_pop(&functions);
 };
 
@@ -254,7 +242,7 @@ static void emitNode(AstNode *node) {
   case AST_RETURN:
     emitNode(node->as_ret.expr);
     handlePop();
-    emitLong(CREATE_U(OP_RETURN, depth));
+    emitLong(CREATE_U(OP_RETURN, 1));
     break;
   case AST_BINOP:
     emitBinOp(node);
@@ -324,7 +312,7 @@ static void emitNode(AstNode *node) {
                                                : OP_GETGLOBAL,
                       node->as_call.index));
 
-    int _depth = depth;
+    int _depth = currentFunction()->depth;
 
     handlePush();
     emitNodeList(node->as_call.args);
@@ -334,7 +322,7 @@ static void emitNode(AstNode *node) {
 
     emitLong(CREATE_AB(OP_CALL, _depth, has_return));
 
-    depth = _depth + has_return;
+    currentFunction()->depth = _depth + has_return;
     break;
   }
   case AST_READ:
@@ -342,7 +330,7 @@ static void emitNode(AstNode *node) {
     emitLong(CREATE_U(OP_GETGLOBAL, 1));
     emitLong(CREATE_U(OP_PUSHSTRING, 2));
 
-    emitLong(CREATE_AB(OP_CALL, depth, 1));
+    emitLong(CREATE_AB(OP_CALL, currentFunction()->depth, 1));
 
     emitLong(CREATE_U(OP_SETGLOBAL, node->as_read.index));
     break;
@@ -355,7 +343,7 @@ static void emitNode(AstNode *node) {
       u = u->next;
     }
 
-    emitLong(CREATE_AB(OP_CLOSURE, node->as_function.fn_index, 0));
+    emitLong(CREATE_AB(OP_CLOSURE, node->as_function.fn_index, node->as_function.fn->upvalues.size));
     emitLong(CREATE_U(OP_SETGLOBAL, node->as_function.name_index));
     break;
   }
@@ -365,7 +353,6 @@ static void emitNode(AstNode *node) {
 int compile(Function *main, char *chunk) {
   currentChunk = chunk;
   position = 0;
-  depth = 0;
 
   list_init(&functions);
 

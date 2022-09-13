@@ -116,6 +116,7 @@ typedef struct Function {
 
   List params;
   int max_stack;
+  int depth;
 
   /* from lua (always 0) */
   int line_defined;
