@@ -242,7 +242,7 @@ static void emitNode(AstNode *node) {
   case AST_RETURN:
     emitNode(node->as_ret.expr);
     handlePop();
-    emitLong(CREATE_U(OP_RETURN, 1));
+    emitLong(CREATE_U(OP_RETURN, currentFunction()->depth));
     break;
   case AST_BINOP:
     emitBinOp(node);
