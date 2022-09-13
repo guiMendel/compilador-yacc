@@ -28,7 +28,7 @@ static List functions;
 
 %token <string> ID
 %token <number> NUM
-%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ PRINT
+%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ PRINT ARROW BACKSLASH
 
 %type <node> statements statement declaration expression function_declaration function_call
 %type <list> parameters more_parameters arguments more_arguments
@@ -96,6 +96,15 @@ declaration : VAR ID { declareVar($2, fn()); $$ = new_assign_node($2, NULL, 1, f
 expression : '(' expression ')' { $$ = $2; }
            | ID '=' expression { $$ = new_assign_node($1, $3, 0, fn()); }
            | function_call { $$ = $1; }
+           | BACKSLASH 
+           {
+              Function *function = new_function("=(none)", fn());
+              list_append(&fn()->kfunc, function);
+              list_push(&functions, function);
+           } parameters ARROW expression { 
+              fn()->code = new_return_node($5);
+              $$ = new_function_node("=(none)", $3, (Function*)list_pop(&functions));
+            }
            | expression OR expression { $$ = new_binop_node(BINOP_OR, $1, $3); }
            | expression AND expression { $$ = new_binop_node(BINOP_AND, $1, $3); }
            | expression EQUALS expression { $$ = new_binop_node(BINOP_EQ, $1, $3); }

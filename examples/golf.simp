@@ -1,0 +1,4 @@
+var Y = \f -> (\x -> x(x))(\x -> f(\y -> x(x)(y)));
+var factorial_gen = \f -> (\n -> n < 1 || n * f(n-1));
+
+print(Y(factorial_gen)(5));

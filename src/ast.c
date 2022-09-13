@@ -158,7 +158,6 @@ AstNode *new_function_node(char *name, List *args, Function *fn) {
   // FIXME: this may not work for nested functions
   node->as_function.fn_index = fn->parent->kfunc.size - 1;
 
-  node->as_function.name_index = findLocal(name, fn->parent);
   node->as_function.args = args;
   node->as_function.fn = fn;
   return node;
