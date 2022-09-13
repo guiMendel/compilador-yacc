@@ -8,12 +8,12 @@
 
 char *currentChunk;
 int position;
+unsigned long long lastInstruction;
 
 #define emitByte(byte) currentChunk[position++] = byte;
 
 /** functions stack */
 static List functions;
-
 
 #define currentFunction() ((Function *)list_top(&functions))
 
@@ -38,6 +38,7 @@ static void emit(unsigned long value) {
 static void emitLong(unsigned long long value) {
   emit(value & 0xffffffff);
   emit(value >> 32);
+  lastInstruction = value;
 }
 
 static void emitString(const char *string) {
@@ -127,7 +128,13 @@ static void emitFunction(Function *f) {
 
   int stackOffset = emitDummy(sizeof(int)); // max_stack
 
-  emitList(&f->params, (void (*)(void *))emitLocal);
+  emit(f->params.size + f->locals.size);
+  while (f->params.size > 0) {
+    emitLocal(list_pop(&f->params));
+  }
+  while (f->locals.size > 0) {
+    emitLocal(list_pop(&f->locals));
+  }
   emit(0); // lines debug
 
   emitList(&f->kstr, (void (*)(void *))emitString);
@@ -228,8 +235,11 @@ static void emitBinOp(AstNode *node) {
 }
 
 static void emitNode(AstNode *node) {
-  if (node == NULL)
+  if (node == NULL) {
+    emitLong(CREATE_U(OP_PUSHNIL, 1));
+    handlePush();
     return;
+  }
 
   switch (node->type) {
   case AST_BLOCK:
@@ -259,12 +269,14 @@ static void emitNode(AstNode *node) {
     }
     handlePop();
     break;
-  case AST_ASSIGN:
+  case AST_ASSIGN: {
     emitNode(node->as_assign.expr);
-    emitLong(CREATE_U(node->as_assign.is_local ? OP_SETLOCAL : OP_SETGLOBAL,
-                      node->as_assign.index));
-    handlePop();
+    if (!node->as_assign.is_decl) {
+      emitLong(CREATE_U(OP_SETLOCAL, node->as_assign.index));
+      handlePop();
+    }
     break;
+  }
   case AST_IDENT:
     emitLong(CREATE_U(node->as_ident.is_upvalue ? OP_PUSHUPVALUE
                       : node->as_ident.is_local ? OP_GETLOCAL
@@ -317,8 +329,7 @@ static void emitNode(AstNode *node) {
     handlePush();
     emitNodeList(node->as_call.args);
 
-    // TODO: print may not be the only function that does not return
-    int has_return = node->as_call.is_local || node->as_call.is_upvalue || node->as_call.index != 0;
+    int has_return = 1;
 
     emitLong(CREATE_AB(OP_CALL, _depth, has_return));
 
@@ -332,19 +343,32 @@ static void emitNode(AstNode *node) {
 
     emitLong(CREATE_AB(OP_CALL, currentFunction()->depth, 1));
 
-    emitLong(CREATE_U(OP_SETGLOBAL, node->as_read.index));
+    emitLong(CREATE_U(OP_SETLOCAL, node->as_read.index));
+    break;
+  case AST_PRINT:
+    emitLong(CREATE_U(OP_GETGLOBAL, 0));
+
+    int _depth = currentFunction()->depth;
+
+    handlePush();
+    emitNode(node->as_print.expr);
+
+    emitLong(CREATE_AB(OP_CALL, _depth, 0));
+
+    currentFunction()->depth = _depth;
     break;
   case AST_FUNCTION: {
     // emit upvalues
     list_node *u = node->as_function.fn->upvalues.head;
     while (u != NULL) {
-      emitLong(CREATE_U(OP_GETLOCAL, *(int*)u->data));
+      emitLong(CREATE_U(OP_GETLOCAL, *(int *)u->data));
       free(u->data);
       u = u->next;
     }
 
-    emitLong(CREATE_AB(OP_CLOSURE, node->as_function.fn_index, node->as_function.fn->upvalues.size));
-    emitLong(CREATE_U(OP_SETGLOBAL, node->as_function.name_index));
+    emitLong(CREATE_AB(OP_CLOSURE, node->as_function.fn_index,
+                       node->as_function.fn->upvalues.size));
+    handlePush();
     break;
   }
   }

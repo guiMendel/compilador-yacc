@@ -36,6 +36,7 @@ typedef enum {
   AST_WHILE,
   AST_CALL,
   AST_READ,
+  AST_PRINT,
   AST_FUNCTION,
 } NodeType;
 
@@ -73,7 +74,7 @@ typedef struct AstNode {
 
     struct {
       int index;
-      int is_local;
+      int is_decl;
       struct AstNode *expr;
     } as_assign;
 
@@ -100,6 +101,10 @@ typedef struct AstNode {
     } as_read;
 
     struct {
+      struct AstNode *expr;
+    } as_print;
+
+    struct {
       int name_index;
       int fn_index;
       Function *fn;
@@ -115,6 +120,8 @@ typedef struct Function {
   char *source_name;
 
   List params;
+  List locals;
+
   int max_stack;
   int depth;
 
@@ -142,9 +149,10 @@ AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els);
 AstNode *new_while_node(AstNode *cond, AstNode *body);
 
 AstNode *new_ident_node(char *name, Function *fn);
-AstNode *new_assign_node(char *name, AstNode *expr, Function *fn);
+AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn);
 AstNode *new_call_node(char *name, List *args, Function *fn);
 AstNode *new_read_node(char *name, Function *fn);
+AstNode *new_print_node(AstNode *expr);
 
 AstNode *new_function_node(char *name, List *params, Function *fn);
 

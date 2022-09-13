@@ -1,8 +1,6 @@
 function factorial(number)
   # Accumulates the result
-  var result;
-
-  result = 1;
+  var result = 1;
 
   while (number > 0) do
     result = result * number;
