@@ -32,7 +32,7 @@ typedef ErrorEntry WarningEntry;
 
 void init_aux_tables();
 
-void var_assignment(SymbolTable *, char *, VarType);
+void var_assignment(SymbolTable *, char *, VarType, int *);
 void var_read(Function *, char *, int *, int *);
 void var_add(SymbolTable *, char *, VarType);
 

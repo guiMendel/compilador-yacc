@@ -122,7 +122,7 @@ void var_read(Function *function, char *name, int *index, int *is_upvalue) {
   entry->used = true;
 }
 
-void var_assignment(SymbolTable *symbol_table, char *name, VarType type) {
+void var_assignment(SymbolTable *symbol_table, char *name, VarType type, int *index) {
   SymbolTableEntry *entry = find_table_entry(symbol_table, name);
   if (entry != NULL) {
     if (entry->type == UNKNOWN || entry->type == type) {
@@ -132,6 +132,7 @@ void var_assignment(SymbolTable *symbol_table, char *name, VarType type) {
       return;
     }
     entry->used = true;
+    *index = entry->index;
   } else {
     variable_not_declared(name);
     return;

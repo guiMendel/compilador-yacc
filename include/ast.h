@@ -149,14 +149,12 @@ AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els);
 AstNode *new_while_node(AstNode *cond, AstNode *body);
 
 AstNode *new_ident_node(char *name, Function *fn);
-AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn);
+AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn, VarType type);
 AstNode *new_call_node(AstNode *expr, List *args);
 AstNode *new_read_node(char *name, Function *fn);
 AstNode *new_print_node(AstNode *expr);
 
 AstNode *new_function_node(char *name, List *params, Function *fn);
-
-void declareVar(char *name, Function *fn);
 
 void function_init(Function *f, char *source_name);
 Function *new_function(char *source_name, Function *parent);

@@ -60,7 +60,6 @@ statements : empty { $$ = new_block_node(); }
 function_declaration : FUNCTION ID 
                       {
                         Function *function = new_function("=(none)", fn());
-                        declareVar($2, fn());
                         var_add(&fn()->symbol_table, $2, PROCEDURE);
 
                         list_append(&fn()->kfunc, function);
@@ -102,20 +101,17 @@ statement : expression ';'
 
 declaration : VAR ID { 
               var_add(&fn()->symbol_table, $2, UNKNOWN);
-              declareVar($2, fn()); 
-              $$ = new_assign_node($2, NULL, 1, fn()); 
+              $$ = new_assign_node($2, NULL, 1, fn(), UNKNOWN);
             }
             | VAR ID '=' expression { 
               var_add(&fn()->symbol_table, $2, UNKNOWN);
-              var_assignment(&fn()->symbol_table, $2, NUMBER);
 
-              declareVar($2, fn()); 
-              $$ = new_assign_node($2, $4, 1, fn()); 
+              $$ = new_assign_node($2, $4, 1, fn(), NUMBER);
               }
             ;
 
 expression : '(' expression ')' { $$ = $2; }
-           | ID '=' expression { $$ = new_assign_node($1, $3, 0, fn()); }
+           | ID '=' expression { $$ = new_assign_node($1, $3, 0, fn(), NUMBER); }
            | function_call { $$ = $1; }
            | BACKSLASH 
            {

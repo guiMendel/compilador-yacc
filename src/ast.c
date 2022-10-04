@@ -60,32 +60,6 @@ AstNode *new_while_node(AstNode *cond, AstNode *body) {
   return node;
 }
 
-static int findLocal(char *name, Function *fn) {
-  list_node *n = fn->params.head;
-  int i = 0;
-
-  while (n != NULL) {
-    if (strcmp(name, (char *)n->data) == 0) {
-      return i;
-    }
-    n = n->next;
-    i++;
-  }
-
-  n = fn->locals.head;
-  while (n != NULL) {
-    if (strcmp(name, (char *)n->data) == 0) {
-      return i;
-    }
-    n = n->next;
-    i++;
-  }
-
-  return -1;
-}
-
-void declareVar(char *name, Function *fn) { list_append(&fn->locals, name); }
-
 AstNode *new_ident_node(char *name, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
 
@@ -95,11 +69,13 @@ AstNode *new_ident_node(char *name, Function *fn) {
   return node;
 }
 
-AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn) {
+AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn, VarType type) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_ASSIGN;
 
-  int index = findLocal(name, fn);
+  int index;
+
+  var_assignment(&fn->symbol_table, name, type, &index);
 
   node->as_assign.index = index;
   node->as_assign.expr = expr;
@@ -119,7 +95,11 @@ AstNode *new_call_node(AstNode *expr, List *args) {
 AstNode *new_read_node(char *name, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_READ;
-  node->as_read.index = findLocal(name, fn);
+
+  int index;
+  var_assignment(&fn->symbol_table, name, NUMBER, &index);
+
+  node->as_read.index = index;
   return node;
 }
 
