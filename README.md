@@ -37,4 +37,6 @@ O executável será gerado em `output/simp`
 
 ## Uso
 
-TODO
+```bash
+./output/simp examples/factorial.simp
+```
