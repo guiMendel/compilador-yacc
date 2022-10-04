@@ -28,13 +28,22 @@ int main(int argc, char *argv[]) {
 
   if (infile == NULL) {
     fprintf(stderr, "Could not open file\n");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   Function *f = parse(infile);
 
   char chunk[2048];
   int size = compile(f, chunk);
+
+  if(has_semantic_warnings()) {
+    display_warning_list();
+  }
+
+  if(has_semantic_errors()) {
+    display_error_list();
+    exit(EXIT_FAILURE);
+  }
 
   if (outfile != NULL) {
     fwrite(chunk, 1, size, outfile);

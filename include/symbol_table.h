@@ -8,39 +8,60 @@
 
 #include "list.h"
 
+extern int yylineno;
+
 typedef List SymbolTable;
-typedef enum { NUMBER, STRING, UNKNOWN } VarType;
+typedef struct Function Function;
+typedef enum { NUMBER, STRING, UNKNOWN, PROCEDURE } VarType;
 
 typedef struct SymbolTableEntry {
-    bool used;
-    VarType type;
-    char* name;
+  bool used;
+  VarType type;
+  char *name;
+  int index;
+  int lineno;
 } SymbolTableEntry;
 
-SymbolTable* symbol_table;
-
 typedef List ErrorList;
+typedef List WarningList;
 
 typedef struct ErrorEntry {
-    char* error;
+  char *message;
 } ErrorEntry;
 
-SymbolTable* create_table();
+typedef ErrorEntry WarningEntry;
 
-void var_assignment(char*, VarType);
-void var_read(char*);
+void init_aux_tables();
 
-void free_table(SymbolTable*);
+void var_assignment(SymbolTable *, char *, VarType, int *);
+void var_read(Function *, char *, int *, int *);
+void var_add(SymbolTable *, char *, VarType);
+void param_add(SymbolTable *, char *, VarType);
 
-void display_symbol_table(SymbolTable*);
+void procedure_read(SymbolTable *, char *);
 
-char* entry_type(VarType);
-
-void add_var(char*, VarType);
-void check_var_exists(char*);
-bool check_var_type(char*, VarType);
-bool check_var_usage();
+// errors and warning
+void variable_not_declared(char *); 
+void variable_already_declared(char *, int, int);
+void variable_not_used(char *, int);
+void assign_value_type_different(char *, int);
+void procedure_not_used(char *, int);
+void procedure_not_declared(char *, int);
+void procedure_already_declared(char *, int);
+void check_variable_not_used(SymbolTable *symbol_table);
+void check_procedure_not_used(SymbolTable *symbol_table);
 bool has_semantic_errors();
+bool has_semantic_warnings();
+void display_warning_list();
 void display_error_list();
 
-#endif  // SYMBOL_TABLE
+SymbolTableEntry *find_table_entry(SymbolTable *symbol_table, char *name);
+void display_symbol_table(SymbolTable *);
+
+bool is_system_global_procedure(char *);
+
+char *entry_type(VarType);
+
+void free_table(SymbolTable *);
+
+#endif // SYMBOL_TABLE

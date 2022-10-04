@@ -1,8 +1,12 @@
 #ifndef AST_H
 #define AST_H
 
-#include "list.h"
 #include <stdint.h>
+
+#include "list.h"
+#include "symbol_table.h"
+
+typedef struct Function Function;
 
 typedef enum {
   BINOP_ADD,
@@ -34,6 +38,7 @@ typedef enum {
   AST_WHILE,
   AST_CALL,
   AST_READ,
+  AST_PRINT,
   AST_FUNCTION,
 } NodeType;
 
@@ -64,13 +69,12 @@ typedef struct AstNode {
     } as_unop;
 
     struct {
-      int index;
-      int is_local;
+      char *name;
     } as_ident;
 
     struct {
       int index;
-      int is_local;
+      int is_decl;
       struct AstNode *expr;
     } as_assign;
 
@@ -86,7 +90,7 @@ typedef struct AstNode {
     } as_while;
 
     struct {
-      int index;
+      struct AstNode *expr;
       List *args;
     } as_call;
 
@@ -95,8 +99,13 @@ typedef struct AstNode {
     } as_read;
 
     struct {
+      struct AstNode *expr;
+    } as_print;
+
+    struct {
       int name_index;
       int fn_index;
+      Function *fn;
       List *args;
     } as_function;
   };
@@ -109,7 +118,12 @@ typedef struct Function {
   char *source_name;
 
   List params;
+  List locals;
+
+  SymbolTable symbol_table;
+
   int max_stack;
+  int depth;
 
   /* from lua (always 0) */
   int line_defined;
@@ -120,6 +134,8 @@ typedef struct Function {
   List kfunc;
 
   struct Function *parent;
+
+  List upvalues;
 
   AstNode *code; // pointer to a block node
 } Function;
@@ -133,13 +149,13 @@ AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els);
 AstNode *new_while_node(AstNode *cond, AstNode *body);
 
 AstNode *new_ident_node(char *name, Function *fn);
-AstNode *new_assign_node(char *name, AstNode *expr, Function *fn);
-AstNode *new_call_node(char *name, List *args, Function *fn);
+AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn,
+                         VarType type);
+AstNode *new_call_node(AstNode *expr, List *args);
 AstNode *new_read_node(char *name, Function *fn);
+AstNode *new_print_node(AstNode *expr);
 
 AstNode *new_function_node(char *name, List *params, Function *fn);
-
-void declareVar(char *name, Function *fn);
 
 void function_init(Function *f, char *source_name);
 Function *new_function(char *source_name, Function *parent);

@@ -26,6 +26,9 @@
 "function"                              { return TOKEN(FUNCTION); }
 "return"                                { return TOKEN(RETURN); }
 "read"                                  { return TOKEN(READ); }
+"print"                                 { return TOKEN(PRINT); }
+"->"                                    { return TOKEN(ARROW); }
+"\\"                                  { return TOKEN(BACKSLASH); }
 
 "=="                                    { return TOKEN(EQUALS); }
 "!="                                    { return TOKEN(NOT_EQUALS); }

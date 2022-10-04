@@ -32,7 +32,7 @@ static List functions;
 
 %token <string> ID
 %token <number> NUM
-%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ
+%token <token> VAR IF ELSE WHILE DO END FUNCTION RETURN READ PRINT ARROW BACKSLASH
 
 %type <node> statements statement declaration expression function_declaration function_call
 %type <list> parameters more_parameters arguments more_arguments
@@ -49,7 +49,9 @@ static List functions;
 %right '!'
 
 %%
-program : statements { fn()->code = $1; }
+program : statements { 
+        fn()->code = $1; 
+        }
         ;
 
 statements : empty { $$ = new_block_node(); }
@@ -60,10 +62,7 @@ statements : empty { $$ = new_block_node(); }
 function_declaration : FUNCTION ID 
                       {
                         Function *function = new_function("=(none)", fn());
-                        declareVar($2, fn());
-
-                        /** know thyselves **/
-                        declareVar($2, function);
+                        var_add(&fn()->symbol_table, $2, PROCEDURE);
 
                         list_append(&fn()->kfunc, function);
                         list_push(&functions, function);
@@ -77,15 +76,16 @@ function_declaration : FUNCTION ID
 
 parameters : empty { $$ = &fn()->params; }
            | ID more_parameters { 
-              add_var($1, UNKNOWN);
-              list_push($2, $1); $$ = $2; 
-            }
+              param_add(&fn()->symbol_table, $1, UNKNOWN); 
+              list_push($2, $1); $$ = $2;
+              }
            ; 
 
 more_parameters : empty { $$ = &fn()->params; }
                 | ',' ID more_parameters { 
-                  add_var($2, UNKNOWN);
-                  list_push($3, $2); $$ = $3; }
+                  param_add(&fn()->symbol_table, $2, UNKNOWN); 
+                  list_push($3, $2); $$ = $3; 
+                }
                 ;
 
 statement : expression ';'
@@ -96,34 +96,34 @@ statement : expression ';'
           | DO statements END { $$ = $2; }
           | RETURN ';' { $$ = new_return_node(NULL); }
           | RETURN expression ';' { $$ = new_return_node($2); }
-          | READ ID ';' { 
-            var_read($2);
-            $$ = new_read_node($2, fn()); 
-            }
+          | READ ID ';' { $$ = new_read_node($2, fn()); }
+          | PRINT expression ';' { $$ = new_print_node($2); }
           | ';' { $$ = NULL; }
           ;
 
 declaration : VAR ID { 
-                add_var($2, UNKNOWN);
-
-                declareVar($2, fn()); 
-                $$ = NULL; 
-              }
+              var_add(&fn()->symbol_table, $2, UNKNOWN);
+              $$ = new_assign_node($2, NULL, 1, fn(), UNKNOWN);
+            }
             | VAR ID '=' expression { 
-              add_var($2, NUMBER);
-              var_assignment($2, NUMBER);
+              var_add(&fn()->symbol_table, $2, UNKNOWN);
 
-              declareVar($2, fn());
-              $$ = new_assign_node($2, $4, fn()); 
+              $$ = new_assign_node($2, $4, 1, fn(), NUMBER);
               }
             ;
 
 expression : '(' expression ')' { $$ = $2; }
-           | ID '=' expression { 
-              var_assignment($1, NUMBER);
-              $$ = new_assign_node($1, $3, fn()); 
-             }
+           | ID '=' expression { $$ = new_assign_node($1, $3, 0, fn(), NUMBER); }
            | function_call { $$ = $1; }
+           | BACKSLASH 
+           {
+              Function *function = new_function("=(none)", fn());
+              list_append(&fn()->kfunc, function);
+              list_push(&functions, function);
+           } parameters ARROW expression { 
+              fn()->code = new_return_node($5);
+              $$ = new_function_node("=(none)", $3, (Function*)list_pop(&functions));
+            }
            | expression OR expression { $$ = new_binop_node(BINOP_OR, $1, $3); }
            | expression AND expression { $$ = new_binop_node(BINOP_AND, $1, $3); }
            | expression EQUALS expression { $$ = new_binop_node(BINOP_EQ, $1, $3); }
@@ -137,14 +137,10 @@ expression : '(' expression ')' { $$ = $2; }
            | '-' expression { $$ = new_unop_node(UNOP_NEG, $2); }
            | '!' expression { $$ = new_unop_node(UNOP_NOT, $2); }
            | NUM { $$ = new_number_node($1); }
-           | ID { 
-            var_read($1);
-            $$ = new_ident_node($1, fn()); 
-            }
+           | ID { $$ = new_ident_node($1, fn()); }
            ;
 
-function_call : ID '(' arguments ')' { $$ = new_call_node($1, $3, fn()); }
-              ;
+function_call : expression '(' arguments ')' { $$ = new_call_node($1, $3); } ;
 
 arguments : empty { $$ = new_list(); }
           | expression more_arguments { list_push($2, $1); $$ = $2; }
@@ -160,26 +156,23 @@ empty : /* empty */;
 
 void yyerror(char *message) {
   fprintf(stderr, "Error: %s at %d\n", message, yylineno);
-  exit(1);
+  exit(EXIT_FAILURE);
 }
 
 Function* parse(FILE *file) {
   list_init(&functions);
   list_push(&functions, new_function("=(main)", NULL));
 
+  init_aux_tables();
+
   yyin = file;
 
-  symbol_table = create_table();
-
   yyparse();
-  
-  display_symbol_table(symbol_table);
 
-  if(has_semantic_errors()){
+  if(has_semantic_errors()) {
     display_error_list();
+    exit(EXIT_FAILURE);
   }
-
-  free_table(symbol_table);
-
+  
   return fn();
 }

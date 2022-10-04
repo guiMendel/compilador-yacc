@@ -60,87 +60,35 @@ AstNode *new_while_node(AstNode *cond, AstNode *body) {
   return node;
 }
 
-static int findGlobal(char *name, Function *fn) {
-  list_node *n = fn->kstr.head;
-  int i = 0;
-
-  while (n != NULL) {
-    if (strcmp(name, (char *)n->data) == 0) {
-      return i;
-    }
-    n = n->next;
-    i++;
-  }
-
-  return -1;
-}
-
-static int findLocal(char *name, Function *fn) {
-  list_node *n = fn->params.head;
-  int i = 0;
-
-  while (n != NULL) {
-    if (strcmp(name, (char *)n->data) == 0) {
-      return i;
-    }
-    n = n->next;
-    i++;
-  }
-
-  return -1;
-}
-
-void declareVar(char *name, Function *fn) { list_append(&fn->kstr, name); }
-
 AstNode *new_ident_node(char *name, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
+
   node->type = AST_IDENT;
-
-  node->as_ident.is_local = 0;
-
-  int index = findLocal(name, fn);
-  if (index == -1) {
-    index = findGlobal(name, fn);
-    if (index == -1) {
-      printf("Error: Unknown variable %s\n", name);
-      exit(1);
-    }
-  } else {
-    node->as_ident.is_local = 1;
-  }
-
-  node->as_ident.index = index;
+  node->as_ident.name = name;
 
   return node;
 }
 
-AstNode *new_assign_node(char *name, AstNode *expr, Function *fn) {
+AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn,
+                         VarType type) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_ASSIGN;
 
-  node->as_assign.is_local = 0;
+  int index;
 
-  int index = findLocal(name, fn);
-  if (index == -1) {
-    index = findGlobal(name, fn);
-    if (index == -1) {
-      printf("Error: Unknown variable %s\n", name);
-      exit(1);
-    }
-  } else {
-    node->as_assign.is_local = 1;
-  }
+  var_assignment(&fn->symbol_table, name, type, &index);
 
   node->as_assign.index = index;
-
   node->as_assign.expr = expr;
+  node->as_assign.is_decl = is_decl;
   return node;
 }
 
-AstNode *new_call_node(char *name, List *args, Function *fn) {
+AstNode *new_call_node(AstNode *expr, List *args) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_CALL;
-  node->as_call.index = findGlobal(name, fn);
+
+  node->as_call.expr = expr;
   node->as_call.args = args;
   return node;
 }
@@ -148,7 +96,18 @@ AstNode *new_call_node(char *name, List *args, Function *fn) {
 AstNode *new_read_node(char *name, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_READ;
-  node->as_read.index = findGlobal(name, fn);
+
+  int index;
+  var_assignment(&fn->symbol_table, name, NUMBER, &index);
+
+  node->as_read.index = index;
+  return node;
+}
+
+AstNode *new_print_node(AstNode *expr) {
+  AstNode *node = malloc(sizeof(*node));
+  node->type = AST_PRINT;
+  node->as_print.expr = expr;
   return node;
 }
 
@@ -159,8 +118,8 @@ AstNode *new_function_node(char *name, List *args, Function *fn) {
   // FIXME: this may not work for nested functions
   node->as_function.fn_index = fn->parent->kfunc.size - 1;
 
-  node->as_function.name_index = findGlobal(name, fn->parent);
   node->as_function.args = args;
+  node->as_function.fn = fn;
   return node;
 }
 
@@ -172,6 +131,8 @@ void function_init(Function *f, char *source_name) {
   f->max_stack = 0;
 
   list_init(&f->params);
+  list_init(&f->locals);
+  list_init(&f->symbol_table);
 
   list_init(&f->kstr);
   list_init(&f->knum);
