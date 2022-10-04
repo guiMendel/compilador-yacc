@@ -1,5 +1,23 @@
 # Linguagem Simp
 
+## Features
+
+- [x] Expressões Aritméticas
+- [x] Expressões Relacionais
+- [x] Variáveis
+- [x] Condicionais (if/else)
+- [x] Laço de repetição (while)
+- [x] Procedimentos/Funções
+- [x] Funções anônimas/lambdas
+- [x] Closures/upvalues
+- [x] IO (read/print)
+- [x] Recursão (ver exemplo y.simp)
+- [x] Erros/warnings de compilação
+- [ ] Tailcall
+- [ ] Arrays
+- [ ] Strings
+- [ ] Laço de repetição (for)
+
 ## Instruções para building
 
 1. Instale as dependências do parser (bison e flex)
