@@ -76,14 +76,14 @@ function_declaration : FUNCTION ID
 
 parameters : empty { $$ = &fn()->params; }
            | ID more_parameters { 
-              var_add(&fn()->symbol_table, $1, UNKNOWN); 
+              param_add(&fn()->symbol_table, $1, UNKNOWN); 
               list_push($2, $1); $$ = $2;
               }
            ; 
 
 more_parameters : empty { $$ = &fn()->params; }
                 | ',' ID more_parameters { 
-                  var_add(&fn()->symbol_table, $2, UNKNOWN); 
+                  param_add(&fn()->symbol_table, $2, UNKNOWN); 
                   list_push($3, $2); $$ = $3; 
                 }
                 ;

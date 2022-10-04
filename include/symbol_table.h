@@ -36,6 +36,7 @@ void init_aux_tables();
 void var_assignment(SymbolTable *, char *, VarType, int *);
 void var_read(Function *, char *, int *, int *);
 void var_add(SymbolTable *, char *, VarType);
+void param_add(SymbolTable *, char *, VarType);
 
 void procedure_read(SymbolTable *, char *);
 

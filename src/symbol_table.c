@@ -88,9 +88,20 @@ void var_add(SymbolTable *symbol_table, char *name, VarType type) {
   SymbolTableEntry *entry = find_table_entry(symbol_table, name);
   if (entry == NULL) {
     SymbolTableEntry *symbol_entry = create_table_entry(name, type);
-    symbol_entry->index = symbol_table->size;
     symbol_entry->lineno = yylineno;
     list_push(symbol_table, symbol_entry);
+  } else {
+    variable_already_declared(name, yylineno, entry->lineno);
+    return;
+  }
+}
+
+void param_add(SymbolTable *symbol_table, char *name, VarType type) {
+  SymbolTableEntry *entry = find_table_entry(symbol_table, name);
+  if (entry == NULL) {
+    SymbolTableEntry *symbol_entry = create_table_entry(name, type);
+    symbol_entry->lineno = yylineno;
+    list_append(symbol_table, symbol_entry);
   } else {
     variable_already_declared(name, yylineno, entry->lineno);
     return;
@@ -209,15 +220,18 @@ SymbolTableEntry *find_table_entry(SymbolTable *symbol_table, char *name) {
   list_node *n = symbol_table->head;
   bool has_found = false;
 
+  int i = symbol_table->size;
   if (symbol_table->size == 0) {
     return NULL;
   }
   while (n != NULL) {
+    i--;
     SymbolTableEntry *entry = (SymbolTableEntry *)n->data;
     has_found = strcmp(name, entry->name) == 0;
 
     if (has_found) {
-      return (SymbolTableEntry *)n->data;
+      entry->index = i;
+      return entry;
     }
 
     n = n->next;
