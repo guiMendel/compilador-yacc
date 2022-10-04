@@ -106,7 +106,7 @@ void var_read(Function *function, char *name, int *index, int *is_upvalue) {
       entry = find_table_entry(&function->parent->symbol_table, name);
     }
     if (entry == NULL) {
-      variable_not_declared(name, entry->lineno);
+      variable_not_declared(name);
       return;
     } else {
       *is_upvalue = 1;
@@ -135,7 +135,7 @@ void var_assignment(SymbolTable *symbol_table, char *name, VarType type,
     }
     *index = entry->index;
   } else {
-    variable_not_declared(name, entry->lineno);
+    variable_not_declared(name);
     return;
   }
 }
@@ -260,9 +260,9 @@ void procedure_not_used(char *name, int lineno) {
   list_push(warning_list, entry);
 }
 
-void variable_not_declared(char *name, int lineno) {
-  char *template = "Variable %s, at line %d is not declared.";
-  char *str = interpolate_error(template, name, lineno);
+void variable_not_declared(char *name) {
+  char *str = malloc(sizeof(char *) * 200);
+  sprintf(str, "Unknown variable %s", name);
   ErrorEntry *entry = create_error_entry(str);
   list_push(error_list, entry);
 }

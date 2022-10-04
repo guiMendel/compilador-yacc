@@ -40,7 +40,7 @@ void var_add(SymbolTable *, char *, VarType);
 void procedure_read(SymbolTable *, char *);
 
 // errors and warning
-void variable_not_declared(char *, int);
+void variable_not_declared(char *); 
 void variable_already_declared(char *, int, int);
 void variable_not_used(char *, int);
 void assign_value_type_different(char *, int);
