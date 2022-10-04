@@ -12,7 +12,7 @@ LEX     = flex
 YACC    = bison -y -t
 YFLAGS  = -d
 
-SRCS 		= $(SRC)/ast.c $(SRC)/compiler.c $(SRC)/list.c $(SRC)/simp.c
+SRCS 		= $(SRC)/ast.c $(SRC)/compiler.c $(SRC)/list.c $(SRC)/simp.c $(SRC)/symbol_table.c
 OBJS 		= $(patsubst $(SRC)/%.c, $(OUTPUT)/%.o, $(SRCS))
 
 all: $(OUTPUT)/y.tab.c $(OUTPUT)/lex.yy.c $(OBJS)

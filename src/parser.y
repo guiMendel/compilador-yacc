@@ -7,10 +7,14 @@ extern int yylineno;
 extern FILE *yyin;
 void yyerror(char *message);
 
+
 #include "ast.h"
 #include "list.h"
+#include "symbol_table.h"
 #include "compiler.h"
 #include "parser.h"
+
+extern SymbolTable* symbol_table;
 
 static List functions;
 #define fn() ((Function *)list_top(&functions))
@@ -69,11 +73,16 @@ function_declaration : FUNCTION ID
                      ;
 
 parameters : empty { $$ = &fn()->params; }
-           | ID more_parameters { list_push($2, $1); $$ = $2; }
+           | ID more_parameters { 
+              var_add(&fn()->symbol_table, $1, UNKNOWN);
+              list_push($2, $1); $$ = $2; 
+            }
            ; 
 
 more_parameters : empty { $$ = &fn()->params; }
-                | ',' ID more_parameters { list_push($3, $2); $$ = $3; }
+                | ',' ID more_parameters { 
+                  /* var_add($3, $2, UNKNOWN); */
+                  list_push($3, $2); $$ = $3; }
                 ;
 
 statement : expression ';'
@@ -89,8 +98,18 @@ statement : expression ';'
           | ';' { $$ = NULL; }
           ;
 
-declaration : VAR ID { declareVar($2, fn()); $$ = new_assign_node($2, NULL, 1, fn()); }
-            | VAR ID '=' expression { declareVar($2, fn()); $$ = new_assign_node($2, $4, 1, fn()); }
+declaration : VAR ID { 
+              var_add(&fn()->symbol_table, $2, UNKNOWN);
+              declareVar($2, fn()); 
+              $$ = new_assign_node($2, NULL, 1, fn()); 
+            }
+            | VAR ID '=' expression { 
+              var_add(&fn()->symbol_table, $2, UNKNOWN);
+              var_assignment(&fn()->symbol_table, $2, NUMBER);
+
+              declareVar($2, fn()); 
+              $$ = new_assign_node($2, $4, 1, fn()); 
+              }
             ;
 
 expression : '(' expression ')' { $$ = $2; }
@@ -121,8 +140,7 @@ expression : '(' expression ')' { $$ = $2; }
            | ID { $$ = new_ident_node($1, fn()); }
            ;
 
-function_call : expression '(' arguments ')' { $$ = new_call_node($1, $3); }
-              ;
+function_call : expression '(' arguments ')' { $$ = new_call_node($1, $3); } ;
 
 arguments : empty { $$ = new_list(); }
           | expression more_arguments { list_push($2, $1); $$ = $2; }
@@ -138,7 +156,7 @@ empty : /* empty */;
 
 void yyerror(char *message) {
   fprintf(stderr, "Error: %s at %d\n", message, yylineno);
-  exit(1);
+  exit(EXIT_FAILURE);
 }
 
 Function* parse(FILE *file) {
@@ -148,6 +166,6 @@ Function* parse(FILE *file) {
   yyin = file;
 
   yyparse();
-
+  
   return fn();
 }

@@ -172,6 +172,7 @@ void function_init(Function *f, char *source_name) {
 
   list_init(&f->params);
   list_init(&f->locals);
+  list_init(&f->symbol_table);
 
   list_init(&f->kstr);
   list_init(&f->knum);

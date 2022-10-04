@@ -2,6 +2,7 @@
 #define AST_H
 
 #include "list.h"
+#include "symbol_table.h"
 #include <stdint.h>
 
 typedef struct Function Function;
@@ -119,6 +120,8 @@ typedef struct Function {
 
   List params;
   List locals;
+
+  SymbolTable symbol_table;
 
   int max_stack;
   int depth;
