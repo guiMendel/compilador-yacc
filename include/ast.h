@@ -120,8 +120,7 @@ typedef struct Function {
   List params;
   List locals;
 
-  SymbolTable params_table;
-  SymbolTable locals_table;
+  SymbolTable symbol_table;
 
   int max_stack;
   int depth;

@@ -3,5 +3,5 @@ a = 5;
 function b(a)
   print(a);
 end
-
-b(4);
+a = 6;
+b(a);

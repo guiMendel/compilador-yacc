@@ -98,7 +98,7 @@ void var_add(SymbolTable *symbol_table, char *name, VarType type) {
 
 void var_read(Function *function, char *name, int *index, int *is_upvalue) {
   // try read local
-  SymbolTableEntry *entry = find_table_entry(&function->locals_table, name);
+  SymbolTableEntry *entry = find_table_entry(&function->symbol_table, name);
   if (entry == NULL) {
     // try read upvalue
     if (function->parent) {
