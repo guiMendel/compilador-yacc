@@ -19,6 +19,7 @@ typedef struct SymbolTableEntry {
   VarType type;
   char *name;
   int index;
+  int lineno;
 } SymbolTableEntry;
 
 typedef List ErrorList;
@@ -37,16 +38,15 @@ void var_read(Function *, char *, int *, int *);
 void var_add(SymbolTable *, char *, VarType);
 
 void procedure_read(SymbolTable *, char *);
-void procedure_add(SymbolTable *, char *);
 
 // errors and warning
-void variable_not_declared(char *);
-void variable_already_declared(char *);
-void variable_not_used(char *name);
-void assign_value_type_different(char *);
-void procedure_not_used(char *name);
-void procedure_not_declared(char *);
-void procedure_already_declared(char *);
+void variable_not_declared(char *, int);
+void variable_already_declared(char *, int, int);
+void variable_not_used(char *, int);
+void assign_value_type_different(char *, int);
+void procedure_not_used(char *, int);
+void procedure_not_declared(char *, int);
+void procedure_already_declared(char *, int);
 void check_variable_not_used(SymbolTable *symbol_table);
 void check_procedure_not_used(SymbolTable *symbol_table);
 bool has_semantic_errors();

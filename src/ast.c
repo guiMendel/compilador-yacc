@@ -69,7 +69,8 @@ AstNode *new_ident_node(char *name, Function *fn) {
   return node;
 }
 
-AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn, VarType type) {
+AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn,
+                         VarType type) {
   AstNode *node = malloc(sizeof(*node));
   node->type = AST_ASSIGN;
 

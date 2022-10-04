@@ -78,9 +78,9 @@ void display_warning_list() {
   }
 }
 
-char *interpolate_error(char *template, char *content) {
+char *interpolate_error(char *template, char *content, int lineno) {
   char *str = malloc(sizeof(char *) * 200);
-  sprintf(str, template, content, yylineno);
+  sprintf(str, template, content, lineno);
   return str;
 }
 
@@ -89,9 +89,10 @@ void var_add(SymbolTable *symbol_table, char *name, VarType type) {
   if (entry == NULL) {
     SymbolTableEntry *symbol_entry = create_table_entry(name, type);
     symbol_entry->index = symbol_table->size;
+    symbol_entry->lineno = yylineno;
     list_push(symbol_table, symbol_entry);
   } else {
-    variable_already_declared(name);
+    variable_already_declared(name, yylineno, entry->lineno);
     return;
   }
 }
@@ -105,7 +106,7 @@ void var_read(Function *function, char *name, int *index, int *is_upvalue) {
       entry = find_table_entry(&function->parent->symbol_table, name);
     }
     if (entry == NULL) {
-      variable_not_declared(name);
+      variable_not_declared(name, entry->lineno);
       return;
     } else {
       *is_upvalue = 1;
@@ -122,30 +123,19 @@ void var_read(Function *function, char *name, int *index, int *is_upvalue) {
   entry->used = true;
 }
 
-void var_assignment(SymbolTable *symbol_table, char *name, VarType type, int *index) {
+void var_assignment(SymbolTable *symbol_table, char *name, VarType type,
+                    int *index) {
   SymbolTableEntry *entry = find_table_entry(symbol_table, name);
   if (entry != NULL) {
     if (entry->type == UNKNOWN || entry->type == type) {
       entry->type = type;
     } else {
-      assign_value_type_different(name);
+      assign_value_type_different(name, entry->lineno);
       return;
     }
-    entry->used = true;
     *index = entry->index;
   } else {
-    variable_not_declared(name);
-    return;
-  }
-}
-
-void procedure_add(SymbolTable *symbol_table, char *name) {
-  SymbolTableEntry *entry = find_table_entry(symbol_table, name);
-  if (entry == NULL) {
-    SymbolTableEntry *symbol_entry = create_table_entry(name, PROCEDURE);
-    list_push(symbol_table, symbol_entry);
-  } else {
-    procedure_already_declared(name);
+    variable_not_declared(name, entry->lineno);
     return;
   }
 }
@@ -164,7 +154,7 @@ void procedure_read(SymbolTable *symbol_table, char *name) {
   if (entry != NULL) {
     entry->used = true;
   } else {
-    procedure_not_declared(name);
+    procedure_not_declared(name, entry->lineno);
     return;
   }
 }
@@ -178,10 +168,14 @@ void check_variable_not_used(SymbolTable *symbol_table) {
   }
   while (n != NULL) {
     SymbolTableEntry *entry = (SymbolTableEntry *)n->data;
-    not_used = !entry->used && entry->type != PROCEDURE;
+    not_used = !entry->used;
 
     if (not_used) {
-      variable_not_used(entry->name);
+      if (entry->type == PROCEDURE) {
+        procedure_not_used(entry->name, entry->lineno);
+      } else {
+        variable_not_used(entry->name, entry->lineno);
+      }
       not_used = false;
     }
 
@@ -202,7 +196,7 @@ void check_procedure_not_used(SymbolTable *symbol_table) {
     not_used = !entry->used && entry->type == PROCEDURE;
 
     if (not_used) {
-      procedure_not_used(entry->name);
+      procedure_not_used(entry->name, entry->lineno);
       not_used = false;
     }
 
@@ -252,52 +246,53 @@ char *var_used_to_string(bool is_used) {
   }
 }
 
-void variable_not_used(char *name) {
+void variable_not_used(char *name, int lineno) {
   char *template = "Variable %s, at line %d is not being used.";
-  char *str = interpolate_error(template, name);
+  char *str = interpolate_error(template, name, lineno);
   WarningEntry *entry = create_error_entry(str);
   list_push(warning_list, entry);
 }
 
-void procedure_not_used(char *name) {
+void procedure_not_used(char *name, int lineno) {
   char *template = "Procedure %s, at line %d is not being used.";
-  char *str = interpolate_error(template, name);
+  char *str = interpolate_error(template, name, lineno);
   WarningEntry *entry = create_error_entry(str);
   list_push(warning_list, entry);
 }
 
-void variable_not_declared(char *name) {
+void variable_not_declared(char *name, int lineno) {
   char *template = "Variable %s, at line %d is not declared.";
-  char *str = interpolate_error(template, name);
+  char *str = interpolate_error(template, name, lineno);
   ErrorEntry *entry = create_error_entry(str);
   list_push(error_list, entry);
 }
 
-void procedure_not_declared(char *name) {
+void procedure_not_declared(char *name, int lineno) {
   char *template = "Procedure %s, at line %d is not declared.";
-  char *str = interpolate_error(template, name);
+  char *str = interpolate_error(template, name, lineno);
   ErrorEntry *entry = create_error_entry(str);
   list_push(error_list, entry);
 }
 
-void variable_already_declared(char *name) {
-  char *template = "Variable %s, at line %d, is already declared.";
-  char *str = interpolate_error(template, name);
+void variable_already_declared(char *name, int lineno, int prev_lineno) {
+  char *str = malloc(sizeof(char *) * 200);
+  sprintf(str, "Variable %s, at line %d is already declared at line %d.", name,
+          lineno, prev_lineno);
   ErrorEntry *entry = create_error_entry(str);
   list_push(error_list, entry);
 }
 
-void procedure_already_declared(char *name) {
+void procedure_already_declared(char *name, int lineno) {
   char *template = "Procedure %s, at line %d, is already declared.";
-  char *str = interpolate_error(template, name);
+  char *str = interpolate_error(template, name, lineno);
   ErrorEntry *entry = create_error_entry(str);
   list_push(error_list, entry);
 }
 
-void assign_value_type_different(char *name) {
+void assign_value_type_different(char *name, int lineno) {
   char *template = "Assiging a value of type different to variable %s, at line "
                    "%d.";
-  char *str = interpolate_error(template, name);
+  char *str = interpolate_error(template, name, lineno);
   ErrorEntry *entry = create_error_entry(str);
   list_push(error_list, entry);
 }

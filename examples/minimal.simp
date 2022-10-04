@@ -1,7 +1,10 @@
 var a;
-a = 5;
-function b(a)
-  print(a);
+function b(x)
+  var k;
+  print(x);
 end
-a = 6;
-b(a);
+
+function b()
+end
+
+b(4);

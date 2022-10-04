@@ -49,7 +49,9 @@ static List functions;
 %right '!'
 
 %%
-program : statements { fn()->code = $1; }
+program : statements { 
+        fn()->code = $1; 
+        }
         ;
 
 statements : empty { $$ = new_block_node(); }
@@ -166,6 +168,11 @@ Function* parse(FILE *file) {
   yyin = file;
 
   yyparse();
+
+  if(has_semantic_errors()) {
+    display_error_list();
+    exit(EXIT_FAILURE);
+  }
   
   return fn();
 }

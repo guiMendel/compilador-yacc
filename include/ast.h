@@ -149,7 +149,8 @@ AstNode *new_if_node(AstNode *cond, AstNode *then, AstNode *els);
 AstNode *new_while_node(AstNode *cond, AstNode *body);
 
 AstNode *new_ident_node(char *name, Function *fn);
-AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn, VarType type);
+AstNode *new_assign_node(char *name, AstNode *expr, int is_decl, Function *fn,
+                         VarType type);
 AstNode *new_call_node(AstNode *expr, List *args);
 AstNode *new_read_node(char *name, Function *fn);
 AstNode *new_print_node(AstNode *expr);

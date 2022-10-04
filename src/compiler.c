@@ -154,6 +154,9 @@ static void emitFunction(Function *f) {
   // patch up the stack size
   patchOffset(stackOffset, f->max_stack);
 
+  // check not used before finish
+  check_variable_not_used(&f->symbol_table);
+
   list_pop(&functions);
 };
 
