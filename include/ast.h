@@ -1,9 +1,10 @@
 #ifndef AST_H
 #define AST_H
 
+#include <stdint.h>
+
 #include "list.h"
 #include "symbol_table.h"
-#include <stdint.h>
 
 typedef struct Function Function;
 
@@ -68,9 +69,7 @@ typedef struct AstNode {
     } as_unop;
 
     struct {
-      int index;
-      int is_local;
-      int is_upvalue;
+      char *name;
     } as_ident;
 
     struct {
@@ -121,7 +120,8 @@ typedef struct Function {
   List params;
   List locals;
 
-  SymbolTable symbol_table;
+  SymbolTable params_table;
+  SymbolTable locals_table;
 
   int max_stack;
   int depth;

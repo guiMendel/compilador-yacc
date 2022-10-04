@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "list.h"
 #include "opcodes.h"
+#include "symbol_table.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -277,13 +278,13 @@ static void emitNode(AstNode *node) {
     }
     break;
   }
-  case AST_IDENT:
-    emitLong(CREATE_U(node->as_ident.is_upvalue ? OP_PUSHUPVALUE
-                      : node->as_ident.is_local ? OP_GETLOCAL
-                                                : OP_GETGLOBAL,
-                      node->as_ident.index));
+  case AST_IDENT: {
+    int index, is_upvalue;
+    var_read(currentFunction(), node->as_ident.name, &index, &is_upvalue);
+    emitLong(CREATE_U(is_upvalue ? OP_PUSHUPVALUE : OP_GETLOCAL, index));
     handlePush();
     break;
+  }
   case AST_IF: {
     emitNode(node->as_if.cond);
     handlePop();

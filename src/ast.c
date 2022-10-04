@@ -88,30 +88,9 @@ void declareVar(char *name, Function *fn) { list_append(&fn->locals, name); }
 
 AstNode *new_ident_node(char *name, Function *fn) {
   AstNode *node = malloc(sizeof(*node));
+
   node->type = AST_IDENT;
-
-  node->as_ident.is_local = 0;
-  node->as_ident.is_upvalue = 0;
-
-  int index = findLocal(name, fn);
-  if (index == -1) {
-    if (fn->parent)
-      index = findLocal(name, fn->parent);
-    if (index == -1) {
-      printf("Error: Unknown variable %s\n", name);
-      exit(1);
-    } else {
-      node->as_ident.is_upvalue = 1;
-
-      int *upvalue = malloc(sizeof(int));
-      *upvalue = index;
-      list_push(&fn->upvalues, upvalue);
-    }
-  } else {
-    node->as_ident.is_local = 1;
-  }
-
-  node->as_ident.index = index;
+  node->as_ident.name = name;
 
   return node;
 }
@@ -172,7 +151,8 @@ void function_init(Function *f, char *source_name) {
 
   list_init(&f->params);
   list_init(&f->locals);
-  list_init(&f->symbol_table);
+  list_init(&f->params_table);
+  list_init(&f->locals_table);
 
   list_init(&f->kstr);
   list_init(&f->knum);

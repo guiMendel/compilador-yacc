@@ -61,6 +61,7 @@ function_declaration : FUNCTION ID
                       {
                         Function *function = new_function("=(none)", fn());
                         declareVar($2, fn());
+                        var_add(&fn()->locals_table, $2, PROCEDURE);
 
                         list_append(&fn()->kfunc, function);
                         list_push(&functions, function);
@@ -72,17 +73,12 @@ function_declaration : FUNCTION ID
                       }
                      ;
 
-parameters : empty { $$ = &fn()->params; }
-           | ID more_parameters { 
-              var_add(&fn()->symbol_table, $1, UNKNOWN);
-              list_push($2, $1); $$ = $2; 
-            }
+parameters : empty {}
+           | ID more_parameters { var_add(&fn()->params_table, $1, UNKNOWN); }
            ; 
 
-more_parameters : empty { $$ = &fn()->params; }
-                | ',' ID more_parameters { 
-                  /* var_add($3, $2, UNKNOWN); */
-                  list_push($3, $2); $$ = $3; }
+more_parameters : empty {}
+                | ',' ID more_parameters { var_add(&fn()->params_table, $2, UNKNOWN); }
                 ;
 
 statement : expression ';'
@@ -99,12 +95,12 @@ statement : expression ';'
           ;
 
 declaration : VAR ID { 
-              var_add(&fn()->symbol_table, $2, UNKNOWN);
+              var_add(&fn()->locals_table, $2, UNKNOWN);
               declareVar($2, fn()); 
               $$ = new_assign_node($2, NULL, 1, fn()); 
             }
             | VAR ID '=' expression { 
-              var_add(&fn()->symbol_table, $2, UNKNOWN);
+              var_add(&fn()->locals_table, $2, UNKNOWN);
               var_assignment(&fn()->symbol_table, $2, NUMBER);
 
               declareVar($2, fn()); 
@@ -162,6 +158,8 @@ void yyerror(char *message) {
 Function* parse(FILE *file) {
   list_init(&functions);
   list_push(&functions, new_function("=(main)", NULL));
+
+  init_aux_tables();
 
   yyin = file;
 

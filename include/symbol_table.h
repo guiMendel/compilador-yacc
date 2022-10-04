@@ -11,6 +11,7 @@
 extern int yylineno;
 
 typedef List SymbolTable;
+typedef struct Function Function;
 typedef enum { NUMBER, STRING, UNKNOWN, PROCEDURE } VarType;
 
 typedef struct SymbolTableEntry {
@@ -29,10 +30,10 @@ typedef struct ErrorEntry {
 
 typedef ErrorEntry WarningEntry;
 
-SymbolTable *create_table();
+void init_aux_tables();
 
 void var_assignment(SymbolTable *, char *, VarType);
-void var_read(SymbolTable *, char *);
+void var_read(Function *, char *, int *, int *);
 void var_add(SymbolTable *, char *, VarType);
 
 void procedure_read(SymbolTable *, char *);

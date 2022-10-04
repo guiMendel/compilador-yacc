@@ -1,2 +1,7 @@
-var a = 5;
-print(a);
+var a;
+a = 5;
+function b(a)
+  print(a);
+end
+
+b(4);

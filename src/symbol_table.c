@@ -1,4 +1,5 @@
 #include "symbol_table.h"
+#include "ast.h"
 
 #include "stdio.h"
 #include "stdlib.h"
@@ -8,12 +9,9 @@ char *var_used_to_string(bool);
 ErrorList *error_list = NULL;
 WarningList *warning_list = NULL;
 
-SymbolTable *create_table() {
-  SymbolTable *symbol_table = new_list();
+void init_aux_tables() {
   error_list = new_list();
   warning_list = new_list();
-
-  return symbol_table;
 }
 
 void free_table(SymbolTable *t) {
@@ -98,14 +96,30 @@ void var_add(SymbolTable *symbol_table, char *name, VarType type) {
   }
 }
 
-void var_read(SymbolTable *symbol_table, char *name) {
-  SymbolTableEntry *entry = find_table_entry(symbol_table, name);
-  if (entry != NULL) {
-    entry->used = true;
+void var_read(Function *function, char *name, int *index, int *is_upvalue) {
+  // try read local
+  SymbolTableEntry *entry = find_table_entry(&function->locals_table, name);
+  if (entry == NULL) {
+    // try read upvalue
+    if (function->parent) {
+      entry = find_table_entry(&function->parent->symbol_table, name);
+    }
+    if (entry == NULL) {
+      variable_not_declared(name);
+      return;
+    } else {
+      *is_upvalue = 1;
+      *index = entry->index;
+
+      int *upvalue = malloc(sizeof(int));
+      *upvalue = entry->index;
+      list_push(&function->upvalues, upvalue);
+    }
   } else {
-    variable_not_declared(name);
-    return;
+    *is_upvalue = 0;
+    *index = entry->index;
   }
+  entry->used = true;
 }
 
 void var_assignment(SymbolTable *symbol_table, char *name, VarType type) {
